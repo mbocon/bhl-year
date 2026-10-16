@@ -29,4 +29,9 @@ export function boot(doc = document) {
   return app;
 }
 
-if (typeof document !== 'undefined') boot(document);
+if (typeof document !== 'undefined') {
+  boot(document);
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  }
+}
