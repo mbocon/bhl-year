@@ -123,3 +123,12 @@ test('eraseAll', () => {
   assert.equal(s.getLog(1), undefined);
   assert.equal(s.state.runs.length, 1);
 });
+test('upsertTest replaces the same day entry instead of duplicating', () => {
+  const s = createStore(mem());
+  s.upsertTest('row2k', 450, 1);
+  s.upsertTest('row2k', 448, 1);
+  assert.equal(s.state.tests.row2k.length, 1);
+  assert.equal(s.state.tests.row2k[0].value, 448);
+  s.upsertTest('row2k', 440, 43);
+  assert.equal(s.state.tests.row2k.length, 2);
+});

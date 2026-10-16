@@ -165,6 +165,12 @@ export function createStore(storage = globalThis.localStorage) {
       (state.tests[testId] ??= []).push({ runId: state.settings.currentRun, day: n, at: now(), value });
       save();
     },
+    upsertTest(testId, value, n) {
+      const list = (state.tests[testId] ??= []);
+      const existing = list.find(t => t.runId === state.settings.currentRun && t.day === n);
+      if (existing) { existing.value = value; existing.at = now(); save(); return; }
+      store.recordTest(testId, value, n);
+    },
 
     getChoice: slotKey => state.choices[slotKey],
     setChoice(slotKey, optionId) { state.choices[slotKey] = optionId; save(); },
