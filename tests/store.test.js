@@ -108,6 +108,7 @@ test('export/import round-trip; corrupt import rejected', () => {
   const s = createStore(mem());
   s.logBlock(1, 'A', { slotKey: 'd1.A.plyo', done: true });
   const txt = s.exportJSON();
+  s.markExported();
   assert.ok(s.settings().lastExportAt);
   const s2 = createStore(mem());
   assert.deepEqual(s2.importJSON(txt), { ok: true });
@@ -131,4 +132,35 @@ test('upsertTest replaces the same day entry instead of duplicating', () => {
   assert.equal(s.state.tests.row2k[0].value, 448);
   s.upsertTest('row2k', 440, 43);
   assert.equal(s.state.tests.row2k.length, 2);
+});
+test('exportJSON does not stamp lastExportAt; markExported does', () => {
+  const s = createStore(mem());
+  s.exportJSON();
+  assert.equal(s.settings().lastExportAt, null);
+  s.markExported();
+  assert.ok(s.settings().lastExportAt);
+});
+test('unreadable existing state is preserved, not overwritten', () => {
+  const st = mem();
+  st.setItem('bhl-year-v1', '{"version":99,"future":true}');
+  const s = createStore(st);
+  assert.equal(s.persistent, true);
+  assert.equal(st.getItem('bhl-year-v1'), '{"version":99,"future":true}');
+  assert.equal(st.getItem('bhl-year-v1.broken'), '{"version":99,"future":true}');
+  s.setCurrentDay(2);
+  assert.equal(JSON.parse(st.getItem('bhl-year-v1')).version, 1);
+});
+test('corrupt JSON in storage does not mark the store non-persistent', () => {
+  const st = mem();
+  st.setItem('bhl-year-v1', 'not json');
+  const s = createStore(st);
+  assert.equal(s.persistent, true);
+  assert.equal(st.getItem('bhl-year-v1.broken'), 'not json');
+});
+test('liftEvidence excludes today', () => {
+  const s = createStore(mem());
+  s.setCurrentDay(43);
+  s.logBlock(36, 'B', { slotKey: 'd1.B.backsquat', sets: [{ w: 305, r: 1 }], ruleType: 'single', lift: 'backsquat' });
+  s.logBlock(43, 'B', { slotKey: 'd1.B.backsquat', sets: [{ w: 285, r: 6 }], ruleType: 'wave', lift: 'backsquat' });
+  assert.deepEqual(s.history.liftEvidence('backsquat').map(e => e.day), [36]);
 });

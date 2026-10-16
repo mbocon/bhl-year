@@ -27,9 +27,8 @@ const PLYO = [
 ];
 export function plyoFor(week) {
   if (week === 13) return { ...PLYO[0], rx: ['3 × 3, easy, rest 90 s', PLYO[0].rx[1]] };
-  const p = PLYO[(week - 1) % 6];
-  if (week === 12) return { ...p, test: 'jumpMax' };
-  return p;
+  if (week === 12) return { ...PLYO[4], test: 'jumpMax' };
+  return PLYO[(week - 1) % 6];
 }
 
 // ---------- Core (Day 1 D, Day 5 D) ----------

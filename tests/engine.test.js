@@ -162,3 +162,11 @@ test('defaultOptionId prefers stored choice, else older test, else first', () =>
   assert.equal(defaultOptionId(machineBlock(2), ctx(fake({ choices: { 'd1.C.machine': 'bike' } }), { n: 8 })), 'bike');
   assert.equal(defaultOptionId({ key: 'A', slotKey: 'x', rule: { type: 'none' } }, ctx(fake({}), { n: 8 })), undefined);
 });
+test('ladder falls back to set position when reps were not typed', () => {
+  const h = fake({ logs: { 'd2.A.deadlift': [{ day: 2, block: { sets: [{ w: 315 }, { w: 335 }, { w: 355 }] } }] } });
+  assert.equal(targets(ladderBlock([7, 6, 5], 'A'), ctx(h, { n: 9 })).text, 'Start set of 7 at 335 lb');
+});
+test('ladder with no history still prefills the rep scheme', () => {
+  const t = targets(ladderBlock([8, 7, 6], 'A'), ctx(fake({}), { n: 2 }));
+  assert.deepEqual(t.prefill.sets.map(s => s.r), [8, 7, 6]);
+});

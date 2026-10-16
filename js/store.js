@@ -53,22 +53,23 @@ export function createStore(storage = globalThis.localStorage) {
   let persistent = true;
   let state = null;
 
-  try {
-    const raw = storage ? storage.getItem(STORAGE_KEY) : null;
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (isValidState(parsed)) state = parsed;
+  let raw = null;
+  try { raw = storage ? storage.getItem(STORAGE_KEY) : null; } catch { persistent = false; }
+  if (raw) {
+    try { const parsed = JSON.parse(raw); if (isValidState(parsed)) state = parsed; } catch { /* unreadable: handled below */ }
+    if (!state) {
+      // Never overwrite something we could not read: keep a copy and defer saving until the first real change.
+      try { storage.setItem(STORAGE_KEY + '.broken', raw); } catch { /* best effort */ }
     }
-  } catch {
-    persistent = false;
   }
+  const deferInitialSave = !!raw && !state;
   if (!state) state = freshState();
 
   const save = () => {
     if (!storage) { persistent = false; return; }
     try { storage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { persistent = false; }
   };
-  save();
+  if (!deferInitialSave) save();
 
   const runLogs = () => (state.logs[state.settings.currentRun] ??= {});
   const now = () => Date.now();
@@ -108,7 +109,7 @@ export function createStore(storage = globalThis.localStorage) {
       const limit = state.settings.currentDay;
       for (const dayStr of Object.keys(logs)) {
         const day = Number(dayStr);
-        if (day > limit) continue;
+        if (day >= limit) continue;
         for (const block of Object.values(logs[dayStr].blocks || {})) {
           if (block.lift !== liftKey || !kinds[block.ruleType]) continue;
           const top = heaviest(block.sets);
@@ -175,11 +176,8 @@ export function createStore(storage = globalThis.localStorage) {
     getChoice: slotKey => state.choices[slotKey],
     setChoice(slotKey, optionId) { state.choices[slotKey] = optionId; save(); },
 
-    exportJSON() {
-      state.settings.lastExportAt = now();
-      save();
-      return JSON.stringify(state, null, 2);
-    },
+    exportJSON() { return JSON.stringify(state, null, 2); },
+    markExported() { state.settings.lastExportAt = now(); save(); },
     importJSON(text) {
       let parsed;
       try { parsed = JSON.parse(text); } catch { return { ok: false, error: 'Not a valid backup file.' }; }

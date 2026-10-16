@@ -29,7 +29,7 @@ export function boot(doc = document) {
   return app;
 }
 
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && !globalThis.__BHL_TEST__) {
   boot(document);
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });

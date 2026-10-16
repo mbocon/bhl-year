@@ -14,6 +14,17 @@ function heaviest(sets) {
   for (const s of sets || []) if (s && Number.isFinite(s.w) && (!best || s.w > best.w)) best = s;
   return best;
 }
+/** The value a test block records, from what was logged; null when nothing valid is there. */
+export function testValueFor(resolved, b) {
+  const testId = resolved.test;
+  if (!testId || !b) return null;
+  if (testId.startsWith('max_')) return heaviest(b.sets)?.w ?? null;
+  if (testId === 'jumpMax') return Number.isFinite(b.height) ? b.height : null;
+  if (resolved.inputs?.some(i => i.kind === 'time')) return Number.isFinite(b.time) ? b.time : null;
+  if (resolved.inputs?.some(i => i.kind === 'cal')) return Number.isFinite(b.cal) ? b.cal : null;
+  if (resolved.inputs?.some(i => i.kind === 'reps')) return Number.isFinite(b.reps) ? b.reps : null;
+  return null;
+}
 function completedCount(store) {
   const logs = store.state.logs[store.settings().currentRun] || {};
   return Object.values(logs).filter(d => d.completedAt).length;
@@ -67,8 +78,8 @@ export function renderToday(root, app) {
     const blog = log.blocks[block.key] || {};
     const done = !!blog.done;
     const meta = { slotKey: block.slotKey, optionId, ruleType: resolved.rule.type, lift: block.lift, format: resolved.rule.format };
-    const write = patch => store.logBlock(n, block.key, { ...meta, ...patch });
     const cur = () => store.getLog(n)?.blocks?.[block.key] || {};
+    const write = patch => { store.logBlock(n, block.key, { ...meta, ...patch }); if (cur().done) recordTestIfAny(); };
     const isOpen = block.key === openKey;
     const vis = block.options ? visibleOptions(block.options, equipment) : null;
     const chosen = vis ? (vis.find(o => o.id === optionId) || vis[0]) : null;
@@ -91,16 +102,8 @@ export function renderToday(root, app) {
       app.render();
     }
     function recordTestIfAny() {
-      const testId = resolved.test;
-      if (!testId) return;
-      const b = cur();
-      let value = null;
-      if (testId.startsWith('max_')) value = heaviest(b.sets)?.w ?? null;
-      else if (testId === 'jumpMax') value = Number.isFinite(b.height) ? b.height : null;
-      else if (resolved.inputs?.some(i => i.kind === 'time')) value = Number.isFinite(b.time) ? b.time : null;
-      else if (resolved.inputs?.some(i => i.kind === 'cal')) value = Number.isFinite(b.cal) ? b.cal : null;
-      else if (resolved.inputs?.some(i => i.kind === 'reps')) value = Number.isFinite(b.reps) ? b.reps : null;
-      if (value !== null) store.upsertTest(testId, value, n);
+      const value = testValueFor(resolved, cur());
+      if (value !== null) store.upsertTest(resolved.test, value, n);
     }
 
     if (!isOpen) {
@@ -124,21 +127,26 @@ export function renderToday(root, app) {
       ? h('div', { class: 'target' + (target.missing ? ' soft' : '') }, target.text, target.sub ? h('small', null, target.sub) : null)
       : null;
 
-    const inputs = h('div', { class: 'inputs' }, ...(resolved.inputs || []).map(inp => renderInput(inp)));
-    function numField(value, placeholder, onInput, inputmode = 'decimal') {
-      return h('input', { class: 'in', type: 'text', inputmode, placeholder: placeholder ?? '', value: value ?? '', oninput: e => onInput(e.target.value) });
-    }
     const dispW = w => (w == null ? '' : units === 'kg' ? roundLoad(lbToKg(w), 'kg') : w);
     const parseW = v => { const x = parseFloat(v); return Number.isFinite(x) ? (units === 'kg' ? kgToLb(x) : x) : undefined; };
     const parseInt10 = v => { const x = parseInt(v, 10); return Number.isFinite(x) ? x : undefined; };
     const parseFloatU = v => { const x = parseFloat(v); return Number.isFinite(x) ? x : undefined; };
+    function numField(value, placeholder, onInput, inputmode = 'decimal') {
+      return h('input', { class: 'in', type: 'text', inputmode, placeholder: placeholder ?? '', value: value ?? '', oninput: e => onInput(e.target.value) });
+    }
+    const inputs = h('div', { class: 'inputs' }, ...(resolved.inputs || []).map(inp => renderInput(inp)));
     function renderInput(inp) {
       switch (inp.kind) {
         case 'sets': {
           const logged = blog.sets || [];
           const pre = target?.prefill?.sets || [];
           const rows = Math.max(inp.count, logged.length);
-          const update = (i, patch) => { const sets = (cur().sets || []).map(x => ({ ...x })); while (sets.length <= i) sets.push({}); sets[i] = { ...sets[i], ...patch }; write({ sets }); };
+          const update = (i, patch) => {
+            const sets = (cur().sets || []).map(x => ({ ...x })); while (sets.length <= i) sets.push({});
+            sets[i] = { ...sets[i], ...patch };
+            if (patch.w !== undefined && sets[i].r === undefined && Number.isFinite(pre[i]?.r)) sets[i].r = pre[i].r;
+            write({ sets });
+          };
           const lines = Array.from({ length: rows }, (_, i) => {
             const sv = logged[i] || {}; const p = pre[i] || {};
             const label = block.rule.type === 'wave' && i === rows - 1 ? 'Top' : `Set ${i + 1}`;
@@ -186,7 +194,15 @@ export function renderToday(root, app) {
   else if (s.rest) ctaLabel = 'Rest logged';
   const cta = dayDone
     ? h('button', { class: 'cta done', disabled: true }, `Day ${n} completed ✓`)
-    : h('button', { class: 'cta', onclick: () => { store.completeDay(n); ui.peekDay = null; ui.openKey = null; app.render(); window.scrollTo(0, 0); } }, ctaLabel);
+    : h('button', { class: 'cta', onclick: () => {
+      for (const block of s.blocks) {            // sweep: record any test values typed without toggling done
+        const optionId = defaultOptionId(block, { history, settings });
+        const resolved = resolveBlock(block, optionId);
+        const value = testValueFor(resolved, store.getLog(n)?.blocks?.[block.key]);
+        if (value !== null) store.upsertTest(resolved.test, value, n);
+      }
+      store.completeDay(n); ui.peekDay = null; ui.openKey = null; app.render(); window.scrollTo(0, 0);
+    } }, ctaLabel);
 
   clear(root);
   root.append(header, ...banners, h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), cta);

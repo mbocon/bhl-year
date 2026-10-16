@@ -2,6 +2,7 @@
 import { roundLoad, fmtTime, fmtPace, hrRange, maxHRFrom, lbToKg } from './format.js';
 import { visibleOptions } from './program/rotations.js';
 import { dayInfo } from './calendar.js';
+import { deadliftScheme } from './program/schemes.js';
 
 const DAY = 86400e3;
 const FRESH_DAYS = 42;
@@ -77,13 +78,16 @@ const RULES = {
     const entries = logsInPhase(ctx, block.slotKey, rule.phase).reverse();
     const want = rule.reps[0];
     for (const e of entries) {
-      const s = (e.block.sets || []).find(x => x && x.r === want && Number.isFinite(x.w));
+      const thatWeek = deadliftScheme(dayInfo(e.day).week);
+      const planned = thatWeek.reps || [];
+      const sets = (e.block.sets || []).map((x, i) => (x && x.r === undefined && Number.isFinite(x.w) ? { ...x, r: planned[i] } : x));
+      const s = sets.find(x => x && x.r === want && Number.isFinite(x.w));
       if (s) {
         const prefill = rule.reps.map((r, i) => (i === 0 ? { w: s.w, r } : { r }));
         return { text: `Start set of ${want} at ${fmtLoad(s.w, u)}`, sub: 'then +5 to 10 lb each set', prefill: { sets: prefill } };
       }
     }
-    return missing('Work up. Record each set', 'Your numbers from today seed next week');
+    return { ...missing('Work up. Record each set', 'Your numbers from today seed next week'), prefill: { sets: rule.reps.map(r => ({ r })) } };
   },
   tempoProg(block, ctx, rule) {
     const w = lastTop(ctx, block.slotKey);

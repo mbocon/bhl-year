@@ -13,7 +13,9 @@ export function renderSettings(root, app) {
   const num = (value, onCommit, placeholder = '') => h('input', { class: 'in', type: 'text', inputmode: 'decimal', value: value ?? '', placeholder, onchange: e => { const v = parseFloat(e.target.value); onCommit(Number.isFinite(v) ? v : null); } });
   const toggle = (on, onFlip) => h('button', { class: 'toggle' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: onFlip });
   const field = (label, control, note) => h('div', { class: 'field' }, h('div', null, label, note ? h('div', { class: 'muted' }, note) : null), control);
-  const status = h('div', { class: 'muted', style: 'margin-top:6px' });
+  const status = h('div', { class: 'muted', style: 'margin-top:6px' }, app.ui.flash || '');
+  app.ui.flash = null;
+  const flash = msg => { app.ui.flash = msg; app.render(); };
 
   root.append(h('header', { class: 'hdr' }, h('div', { class: 'day' }, 'Settings')));
 
@@ -63,17 +65,18 @@ export function renderSettings(root, app) {
     const cur = Object.values(store.state.logs).reduce((a, r) => a + Object.keys(r).length, 0);
     if (!confirm(`Replace the ${cur} logged day(s) on this phone with this backup (${days} logged day(s))?`)) return;
     const r = store.importJSON(text);
-    status.textContent = r.ok ? 'Restored.' : r.error;
-    if (r.ok) app.render();
+    flash(r.ok ? 'Restored.' : r.error);
   };
   fileIn.addEventListener('change', () => { const f = fileIn.files && fileIn.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => doImport(String(rd.result)); rd.readAsText(f); });
   root.append(h('div', { class: 'section' }, h('h2', null, 'Backup'),
     h('p', { class: 'muted' }, `Last backup: ${last}. Your log lives only on this phone; back it up every couple of weeks.`),
     h('div', { class: 'btn-row' },
       h('button', { class: 'btn primary', onclick: async () => {
-        try { const r = await shareOrDownload(store.exportJSON(), backupFilename(s.currentDay)); status.textContent = { shared: 'Shared.', downloaded: 'Downloaded.', copied: 'Copied to clipboard: paste it somewhere safe.', cancelled: 'Cancelled.' }[r] || r; }
-        catch (e) { status.textContent = e.message; }
-        app.render();
+        try {
+          const r = await shareOrDownload(store.exportJSON(), backupFilename(s.currentDay));
+          if (r === 'shared' || r === 'downloaded' || r === 'copied') store.markExported();
+          flash({ shared: 'Shared.', downloaded: 'Downloaded.', copied: 'Copied to clipboard: paste it somewhere safe.', cancelled: 'Cancelled.' }[r] || r);
+        } catch (e) { flash(e.message); }
       } }, 'Save a backup')),
     h('div', { class: 'muted' }, 'Restore from a backup file:'), fileIn,
     paste, h('div', { class: 'btn-row' }, h('button', { class: 'btn', onclick: () => { if (paste.value.trim()) doImport(paste.value); } }, 'Restore pasted backup')),

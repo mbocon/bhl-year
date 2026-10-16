@@ -19,7 +19,8 @@ test('plyo rotation and options', () => {
   assert.match(p1.name, /Drop Jump/);
   assert.equal(plyoFor(7).name, p1.name);
   assert.equal(plyoFor(12).test, 'jumpMax');
-  assert.equal(plyoFor(12).name, plyoFor(6).name);
+  assert.match(plyoFor(12).name, /Max Box Jump/);
+  assert.equal(plyoFor(11).test, undefined);
   assert.ok(plyoFor(2).options.some(o => o.needs.includes('box')));
   assert.ok(plyoFor(2).options.some(o => o.needs.length === 0));
   assert.match(plyoFor(13).rx.join(' '), /3 × 3/);
