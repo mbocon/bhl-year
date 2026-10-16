@@ -2,8 +2,9 @@
 import { createStore } from './store.js';
 import { onRoute, ROUTES } from './ui/router.js';
 import { renderToday } from './ui/today.js';
-
-function placeholder(root) { root.textContent = 'Coming soon.'; }
+import { renderDays } from './ui/days.js';
+import { renderScorecard } from './ui/scorecard.js';
+import { renderSettings } from './ui/settings.js';
 
 export function createApp(doc) {
   const store = createStore();
@@ -12,10 +13,10 @@ export function createApp(doc) {
     now: () => Date.now(),
     ui: { peekDay: null, openKey: null },
     route: 'today',
-    views: { today: renderToday },
+    views: { today: renderToday, days: renderDays, scorecard: renderScorecard, settings: renderSettings },
     render() {
       const root = doc.getElementById('view');
-      (app.views[app.route] || placeholder)(root, app);
+      (app.views[app.route] || app.views.today)(root, app);
       for (const a of doc.querySelectorAll('.tabs a')) a.classList.toggle('on', a.dataset.route === app.route);
     },
   };

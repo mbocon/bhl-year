@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('ui modules import without a DOM', async () => {
-  for (const m of ['../js/ui/dom.js', '../js/ui/router.js', '../js/ui/today.js', '../js/main.js']) {
+  for (const m of ['../js/ui/dom.js', '../js/ui/router.js', '../js/ui/today.js', '../js/ui/days.js', '../js/ui/scorecard.js', '../js/ui/settings.js', '../js/backup.js', '../js/main.js']) {
     const mod = await import(m);
     assert.ok(mod, m);
   }
