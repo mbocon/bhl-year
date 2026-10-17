@@ -370,7 +370,7 @@ Export offers the entire JSON object three ways, because phones differ: the syst
 
 ### 5.7 Nutrition card
 
-In Settings, labeled "Macros that paired with BHL (guideline, not medical advice)". Input: bodyweight. Output per day: protein 1.0 g per lb; fat 0.27 g per lb; calories 14 × bodyweight; carbs = remaining calories ÷ 4. Shown next to Mike's original numbers as the worked example (2800 kcal, 180 g protein, 50–60 g fat, ~395 g carbs). A one-line note: recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; adjust by 100–200 kcal every two weeks based on the mirror and the log.
+In Settings, labeled "Macros that paired with BHL (guideline, not medical advice)". Inputs: bodyweight and an optional goal weight (added 2026-10-16). The card computes from the goal weight when one is set, otherwise from bodyweight; the Scorecard's ×BW figures always use bodyweight. Output per day: protein 1.0 g per lb; fat 0.27 g per lb; calories 14 × weight; carbs = remaining calories ÷ 4. The 14 kcal/lb figure was calibrated on Mike at about 200 lb and overshoots at much higher bodyweights, which is why a cut eats for the goal weight. Shown next to Mike's original numbers as the worked example (2800 kcal, 180 g protein, 50–60 g fat, ~395 g carbs). A one-line note: recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; adjust by 100–200 kcal every two weeks based on the mirror and the log.
 
 ### 5.8 Non-functional
 
