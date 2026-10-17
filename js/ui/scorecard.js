@@ -6,7 +6,7 @@ import { fmtTime } from '../format.js';
 import { estimate1RM, fmtLoad } from '../engine.js';
 
 const LIFTS = ['backsquat', 'frontsquat', 'deadlift', 'bench', 'ohp', 'clean'];
-const LIFT_LABEL = { backsquat: 'Back squat', frontsquat: 'Front squat', deadlift: 'Deadlift', bench: 'Bench press', ohp: 'Standing press', clean: 'Clean' };
+const LIFT_LABEL = { backsquat: 'Back squat', frontsquat: 'Front squat', deadlift: 'Deadlift', bench: 'Bench press', ohp: 'Overhead press', clean: 'Clean' };
 
 function fmtValue(b, v, settings) {
   if (v === null || v === undefined) return '—';

@@ -16,6 +16,6 @@ export const BENCHMARKS = [
   { test: 'max_frontsquat', label: 'Front squat', unit: 'xBW', solid: 1.25, strong: null, elite: null, lowerIsBetter: false },
   { test: 'max_deadlift', label: 'Deadlift', unit: 'xBW', solid: 2, strong: null, elite: null, lowerIsBetter: false },
   { test: 'max_bench', label: 'Bench press', unit: 'xBW', solid: 1.25, strong: null, elite: null, lowerIsBetter: false },
-  { test: 'max_ohp', label: 'Standing press', unit: 'xBW', solid: 0.85, strong: null, elite: null, lowerIsBetter: false },
+  { test: 'max_ohp', label: 'Overhead press', unit: 'xBW', solid: 0.85, strong: null, elite: null, lowerIsBetter: false },
   { test: 'max_clean', label: 'Clean', unit: 'xBW', solid: 1, strong: null, elite: null, lowerIsBetter: false },
 ];

@@ -4,7 +4,7 @@ export const DAY_NAMES = [
   'Squat + Intervals',
   'Hinge + Press + Work Capacity',
   'Run + Ruck',
-  'Zone 2 + Pull',
+  'Zone 2 + Pull + Press',
   'Clean + Front Squat + Intervals',
   'Long Easy',
   'Rest',

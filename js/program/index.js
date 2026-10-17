@@ -5,7 +5,7 @@ import { longDuration } from './schemes.js';
 
 export const PHASE_LABELS = { A: 'Accumulation', B: 'Intensification', D: 'Deload + Tests', G: 'Graduation' };
 const PM_DAYS = new Set([1, 2, 3, 5]);
-const BASE_MINUTES = { 1: 98, 2: 112, 3: 98, 4: 60, 5: 88 };
+const BASE_MINUTES = { 1: 98, 2: 112, 3: 98, 4: 70, 5: 88 };
 
 function estMinutes(info, blocks) {
   if (info.graduation || info.dow === 7) return 0;

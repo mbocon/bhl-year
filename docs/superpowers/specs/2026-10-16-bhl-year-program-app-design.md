@@ -84,7 +84,7 @@ This is BHL's 14-week Cycle 1 with its frozen weeks removed and the field tests 
 | 1 | Squat + Intervals | A plyo · B back squat · C machine intervals (rower or air bike, user's choice) · D core | 90–105 min |
 | 2 | Hinge + Press + Work Capacity | A deadlift ladder · B single-leg · C press ladder · D bodyweight EMOM · E mixed modal at moderate pace · F (weeks 1–4 only) 10-min easy flush | 105–120 min |
 | 3 | Run + Ruck | A run intervals · B ruck march · C crawls, drags, odd-object work | 75–120 min |
-| 4 | Zone 2 + Pull | A zone 2 (bike, row, or run) · B pull strength · C arms and shoulders · D mobility | 45–75 min |
+| 4 | Zone 2 + Pull + Press | A zone 2 (bike, row, or run) · B pull strength · C the press Day 2 is not laddering this phase, 4×6, then arms · D mobility | 55–85 min |
 | 5 | Clean + Front Squat + Intervals | A clean · B front squat · C 45/45 or 60/60 intervals · D core | 80–95 min |
 | 6 | Long Easy | Odd weeks: three 20-minute easy circuits + 10-min core EMOM. Weeks 2, 6, 10: long easy run. Weeks 4, 8, 12: long ruck. Week 13: ruck test. | 60–120 min |
 | 7 | Rest (base) / Long Zone 2 (advanced) | Base: rest, optional 20–30 min walk. Advanced: 60–120 min zone 2 on bike, run, or ruck (whichever Day 6 was not). | 0 / 60–120 min |
@@ -215,7 +215,7 @@ Format by week: w1–5 EMOM 16 min, 30 s work per minute · w6–10 EMOM 20 min 
 
 **Day 4 B — Pull strength.** Alternate weekly: (a) weighted pull-ups 5×3–5, load added with DB between feet or ruck, rest 2–3 min, then DB row 4×10/arm; (b) pull-up ladder 1-2-3-4-5… for 10 min, then barbell row 4×8. Option for anyone without 5 strict pull-ups: inverted rows and eccentric pull-ups.
 
-**Day 4 C — Arms and shoulders.** EZ-bar curl 3×10–12 · EZ-bar skull crusher or dips 3×10–12 · DB lateral raise 3×12–15 · DB rear-delt fly 3×15. Rest 60–90 s. Target: beat last week's reps or load.
+**Day 4 C — Press + arms.** Whichever press Day 2 is not laddering this phase (overhead press when the ladder is bench, bench when the ladder is overhead; week 13 light 3×8) 4×6, rest 2 min, then EZ-bar curl 3×10–12 · EZ-bar skull crusher or dips 3×10–12 · DB rear-delt fly 3×15. Rest 60–90 s on the arm work. Target: beat last week's reps or load. (Added 2026-10-16 so both presses appear every week; the 2019 program pressed one lift per phase.)
 
 **Day 4 D — Mobility.** 10 min: hips, thoracic spine, ankles. Builder chooses the exact flow.
 

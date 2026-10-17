@@ -13,7 +13,7 @@ const hr = () => ({ kind: 'hr' });
 const pctText = p => `${Math.round(p * 100)}%`;
 const Z2_OPTIONS = [{ id: 'bike', name: 'Air bike', needs: [] }, { id: 'rower', name: 'Rower', needs: [] }, { id: 'run', name: 'Easy run', needs: [] }];
 
-const LIFT_NAMES = { backsquat: 'Back Squat', frontsquat: 'Front Squat', deadlift: 'Deadlift', bench: 'Bench Press', ohp: 'Standing Press', clean: 'Clean' };
+const LIFT_NAMES = { backsquat: 'Back Squat', frontsquat: 'Front Squat', deadlift: 'Deadlift', bench: 'Bench Press', ohp: 'Overhead Press', clean: 'Clean' };
 
 // ---------- shared builders ----------
 function squatBlock(key, lift, scheme, dow) {
@@ -135,6 +135,14 @@ const z2Block = (key, slotKey, name, minutes, rx, extra = {}) => ({
 const pmBlock = dow => z2Block('PM', `d${dow}.PM`, 'PM Zone 2', 45,
   ['30–45 min easy on the air bike (or an easy row or run)'], { options: Z2_OPTIONS, advanced: true, cues: ['Optional: never required to complete the day'] });
 
+// Day 4 C: the press that Day 2 is not laddering this phase, 4 × 6 to beat last week, then arms.
+function pressPlusArms(info) {
+  const ladder = S.pressLiftFor(info.cycle, info.phase === 'D' ? 'B' : info.phase);
+  const lift = ladder === 'bench' ? 'ohp' : 'bench';
+  return { key: 'C', slotKey: `d4.C.press.${lift}`, name: `${LIFT_NAMES[lift]} + Arms`, lift, rule: { type: 'beatLast' },
+    ...R.armsRx(lift, info.week === 13), inputs: [sets(info.week === 13 ? 3 : 4)] };
+}
+
 // ---------- days ----------
 export function day1(ctx) {
   const { info, firstCycle } = ctx;
@@ -204,7 +212,7 @@ export function day4(ctx) {
   return [
     z2Block('A', 'd4.A.zone2', 'Zone 2', S.zone2Minutes(info.cycle, info.week), [`${S.zone2Minutes(info.cycle, info.week)} min easy`], { options: Z2_OPTIONS, cues: ['Conversational pace, nasal breathing possible'] }),
     { key: 'B', slotKey: `d4.B.pull.${v}`, name: v === 'a' ? 'Weighted Pull-Ups + DB Row' : 'Pull-Up Ladder + Barbell Row', rule: { type: 'beatLast' }, ...R.pullRx(v), inputs: [sets(5)] },
-    { key: 'C', slotKey: 'd4.C.arms', name: 'Arms + Shoulders', rule: { type: 'beatLast' }, ...R.armsRx(), inputs: [sets(4)] },
+    pressPlusArms(info),
     { key: 'D', slotKey: 'd4.D.mobility', name: 'Mobility', rule: { type: 'none' }, rx: R.mobilityRx(), inputs: [] },
   ];
 }

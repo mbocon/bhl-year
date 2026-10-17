@@ -132,3 +132,19 @@ test('every day has unique block keys and well-formed blocks', () => {
     }
   }
 });
+test('both presses appear every week: Day 2 ladders one, Day 4 presses the other', () => {
+  const c = n => S(n).blocks[2];
+  assert.equal(c(2).lift, 'bench');                      // cycle 1 Phase A: bench ladder on Day 2
+  assert.equal(c(4).lift, 'ohp');                        // so Day 4 presses overhead
+  assert.equal(c(4).slotKey, 'd4.C.press.ohp');
+  assert.equal(c(4).name, 'Overhead Press + Arms');
+  assert.equal(c(4).rule.type, 'beatLast');
+  assert.match(c(4).rx[0], /^Overhead press 4 × 6/);
+  assert.equal(c(44).name, 'Overhead Press');            // week 7: the ladder switches to OHP
+  assert.equal(c(46).name, 'Bench Press + Arms');        // and Day 4 switches to bench
+  assert.equal(c(93).lift, 'ohp');                       // cycle 2 reverses the order
+  assert.equal(c(95).lift, 'bench');
+  assert.match(c(88).rx[0], /3 × 8/);                    // week 13: light
+  assert.equal(S(4).title, 'Zone 2 + Pull + Press');
+  assert.equal(S(4).estMinutes, 70);
+});

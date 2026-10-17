@@ -137,7 +137,14 @@ export function pullRx(variant) {
     ? { rx: ['Weighted pull-ups 5 × 3–5, rest 2–3 min (DB between the feet or wear the ruck)', 'DB row 4 × 10/arm, rest 90 s'], cues: ['No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead'] }
     : { rx: ['Pull-up ladder for 10 min: 1, 2, 3, 4, 5 … rest as needed; restart at 1 when you fail', 'Barbell row 4 × 8, rest 2 min'], cues: ['No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead'] };
 }
-export const armsRx = () => ({ rx: ['EZ-bar curl 3 × 10–12', 'EZ-bar skull crusher or dips 3 × 10–12', 'DB lateral raise 3 × 12–15', 'DB rear-delt fly 3 × 15'], cues: ['Rest 60–90 s between sets; beat last week by a rep or 5 lb'] });
+const PRESS_NAME = { ohp: 'Overhead press', bench: 'Bench press' };
+export function armsRx(lift = 'ohp', deload = false) {
+  const press = deload ? `${PRESS_NAME[lift]} 3 × 8, light and crisp, rest 90 s` : `${PRESS_NAME[lift]} 4 × 6, rest 2 min`;
+  return {
+    rx: [press, 'EZ-bar curl 3 × 10–12', 'EZ-bar skull crusher or dips 3 × 10–12', 'DB rear-delt fly 3 × 15'],
+    cues: [deload ? 'Deload: nothing heavy today' : 'Press first while fresh and log those sets; beat last week by a rep or 5 lb', 'Rest 60–90 s on the arm work'],
+  };
+}
 export const mobilityRx = () => ['10 min: hips (90/90 switches, couch stretch) · thoracic spine (open books, bench T-spine extension) · ankles (knee-to-wall)'];
 
 // ---------- Day 5 C: interval stations ----------
