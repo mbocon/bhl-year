@@ -16,6 +16,7 @@ export function defaultSettings(runId) {
     maxHR: null,
     age: null,
     bodyweight: null,
+    goalWeight: null,
     lastExportAt: null,
     equipment: { box: true, rope: true, kb: false, rings: false, climbRope: false, hurdles: false, vest: false, slamBall: false, hrm: true },
   };

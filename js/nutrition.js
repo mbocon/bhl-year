@@ -10,3 +10,11 @@ export function macros(bodyweightLb) {
   const carbs = Math.round((kcal - 4 * protein - 9 * fat) / 4);
   return { kcal, protein, fat, carbs };
 }
+
+/** Eat for the body you are building: the goal weight when set, otherwise the current weight. */
+export function macroPlan(s = {}) {
+  const goal = Number.isFinite(s.goalWeight) && s.goalWeight > 0 ? s.goalWeight : null;
+  const weight = goal ?? (Number.isFinite(s.bodyweight) && s.bodyweight > 0 ? s.bodyweight : null);
+  if (!weight) return null;
+  return { basis: goal ? 'goal' : 'current', weight, ...macros(weight) };
+}

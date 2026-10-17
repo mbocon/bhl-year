@@ -93,3 +93,20 @@ test('a collapsed block with a long name keeps the whole name and drops the key 
   const short = findAll('.card.collapsed').find(c => text(c).includes('Ruck March'));
   assert.equal(short.querySelectorAll('.fig').length, 1);
 });
+
+test('Settings takes a goal weight and the macro card eats for it while the Scorecard keeps the real weight', () => {
+  const app = fresh();
+  app.route = 'settings'; app.render();
+  const input = label => findAll('.field').find(f => text(f).startsWith(label)).querySelector('input.in');
+  input('Bodyweight (lb)').change('273');
+  input('Goal weight (lb)').change('220');
+  assert.equal(app.store.settings().goalWeight, 220);
+  assert.equal(app.store.settings().bodyweight, 273);
+  const card = text(findAll('.card.plain')[0]);
+  assert.match(card, /goal 220 lb/);
+  assert.match(card, /3080/);
+  assert.doesNotMatch(card, /3822/);
+  app.store.upsertTest('max_backsquat', 315, 1);
+  app.route = 'scorecard'; app.render();
+  assert.match(text(findAll('table.sc')[0]), /1\.15×/);
+});
