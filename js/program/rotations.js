@@ -12,21 +12,21 @@ export function visibleOptions(options, equipment = {}) {
 
 // ---------- Day 1 A: plyometrics ----------
 const PLYO = [
-  { name: 'Drop Jump → Vertical Jump', rx: ['5 × 3, rest 90 s', 'Step off, absorb into a quarter squat, jump as high as possible'],
+  { name: 'Drop Jump → Vertical Jump', rx: ['5 × 3, rest 90 s'], cues: ['Step off, absorb into a quarter squat, jump as high as possible'],
     options: [opt('box20', 'Step off a 20″ box', ['box']), opt('bench', 'Step off the bench')] },
-  { name: 'Seated Box Jump', rx: ['5 × 3, rest 2 min', 'Sit on the bench; raise the box each set if you can. Challenging, not a max'],
+  { name: 'Seated Box Jump', rx: ['5 × 3, rest 2 min'], cues: ['Sit on the bench; raise the box each set if you can. Challenging, not a max'],
     options: [opt('boxjump', 'Seated box jump', ['box']), opt('broad', 'Seated jump into broad jump')] },
-  { name: 'Kneeling Jump → Vertical Jump', rx: ['5 × 3, rest 90 s', 'From both knees, swing up to your feet and straight into a vertical jump'],
+  { name: 'Kneeling Jump → Vertical Jump', rx: ['5 × 3, rest 90 s'], cues: ['From both knees, swing up to your feet and straight into a vertical jump'],
     options: [opt('kneel', 'Kneeling jump to vertical')] },
-  { name: 'Standing Rebounding Hurdle Jumps', rx: ['5 × (2 × 3) consecutive jumps, rest 2–3 min', '3 obstacles: 3 jumps out, turn, 3 back. Raise the height only if you still rebound off each one'],
+  { name: 'Standing Rebounding Hurdle Jumps', rx: ['5 × (2 × 3) consecutive jumps, rest 2–3 min'], cues: ['3 obstacles: 3 jumps out, turn, 3 back. Raise the height only if you still rebound off each one'],
     options: [opt('improv', 'Over med ball / sandbag / stacked plates'), opt('hurdles', 'Over hurdles', ['hurdles'])] },
-  { name: 'Max Box Jump', rx: ['Work to a max height for today, rest 60–90 s between big attempts', 'One step in, plant both feet, jump to the top'],
+  { name: 'Max Box Jump', rx: ['Work to a max height for today, rest 60–90 s between big attempts'], cues: ['One step in, plant both feet, jump to the top'],
     options: [opt('box', 'Max box jump', ['box']), opt('broad', 'Max broad jump for distance')] },
-  { name: 'Lateral Single-Leg Hop-Overs', rx: ['5 × 10 alternating over a plate, rest 3 min', 'Stick each landing before the next hop'],
+  { name: 'Lateral Single-Leg Hop-Overs', rx: ['5 × 10 alternating over a plate, rest 3 min'], cues: ['Stick each landing before the next hop'],
     options: [opt('plate', 'Over a plate or line')] },
 ];
 export function plyoFor(week) {
-  if (week === 13) return { ...PLYO[0], rx: ['3 × 3, easy, rest 90 s', PLYO[0].rx[1]] };
+  if (week === 13) return { ...PLYO[0], rx: ['3 × 3, easy, rest 90 s'] };
   if (week === 12) return { ...PLYO[4], test: 'jumpMax' };
   return PLYO[(week - 1) % 6];
 }
@@ -34,14 +34,14 @@ export function plyoFor(week) {
 // ---------- Core (Day 1 D, Day 5 D) ----------
 const CORE = [
   { name: 'Barbell Rollouts', rx: ['4 × 10, rest 2 min'] },
-  { name: 'Half-Kneeling Lateral Med-Ball Throw', rx: ['4 × 10/side @ 14–25 lb, rest 2 min', 'Throw to the side with the knee up; catch and brace the rebound each rep'] },
-  { name: 'DB Turkish Get-Up', rx: ['3 × 5/side, increase weight if possible, rest 2–3 min', 'New to it? Spend 15 min practising positions with light weight'] },
+  { name: 'Half-Kneeling Lateral Med-Ball Throw', rx: ['4 × 10/side @ 14–25 lb, rest 2 min'], cues: ['Throw to the side with the knee up; catch and brace the rebound each rep'] },
+  { name: 'DB Turkish Get-Up', rx: ['3 × 5/side, increase weight if possible, rest 2–3 min'], cues: ['New to it? Spend 15 min practising positions with light weight'] },
   { name: 'Side-Plank Arch-Up + Side-Plank Twist', rx: ['3 × 8/side of each, rest 30 s between, 90 s after'] },
-  { name: 'Seated Pike Hold', rx: ['4 × 30 s, rest 90 s', 'Hands as far forward as possible; slide them back as you fatigue to keep heels off the floor'] },
-  { name: 'L-Hang on the Pull-Up Bar', rx: ['Accumulate 3 min in as few sets as possible', 'Bend one knee if you cannot hold 30 s on the first set'] },
+  { name: 'Seated Pike Hold', rx: ['4 × 30 s, rest 90 s'], cues: ['Hands as far forward as possible; slide them back as you fatigue to keep heels off the floor'] },
+  { name: 'L-Hang on the Pull-Up Bar', rx: ['Accumulate 3 min in as few sets as possible'], cues: ['Bend one knee if you cannot hold 30 s on the first set'] },
   { name: 'Hollow Body Hold', rx: ['Accumulate 4–5 min in as few sets as possible, rest 90 s'] },
-  { name: 'Half-Kneeling Landmine Twist', rx: ['@2011, 4 × 8/side, empty bar up to 25 lb, rest 60 s', 'Set the bar in a corner or against two plates; keep the tempo'] },
-  { name: 'DB Russian Twist', rx: ['4 × 14–18 alternating @ 35 lb, rest 2 min', 'Feet on the floor, half-second pause in the middle, DB to 1 cm off the floor each rep'] },
+  { name: 'Half-Kneeling Landmine Twist', rx: ['Tempo 2011 · 4 × 8/side, empty bar up to 25 lb, rest 60 s'], cues: ['Set the bar in a corner or against two plates; keep the tempo'] },
+  { name: 'DB Russian Twist', rx: ['4 × 14–18 alternating @ 35 lb, rest 2 min'], cues: ['Feet on the floor, half-second pause in the middle, DB to 1 cm off the floor each rep'] },
   { name: 'Front-Leaning Rest on Dip Bars', rx: ['3 sets for max time, rest 2 min'] },
   { name: 'Barbell Floor Wipers', rx: ['4 × 12 alternating @ 95 lb, rest 90 s–2 min'] },
   { name: 'Hanging Around-the-World', rx: ['4 × 10 alternating, rest 2 min'] },
@@ -55,8 +55,8 @@ export function coreFor(dow, week) {
 const SL = {
   brl: { id: 'brl', name: 'Barbell Back-Rack Reverse Lunge', rx: ['3 × 8/leg, not alternating, rest 3 min'] },
   stepup: { id: 'stepup', name: 'DB Front-Rack Step-Up to Bench', rx: ['3 × 8/leg, not alternating, rest 3 min'] },
-  rfe: { id: 'rfe', name: 'Rear-Foot-Elevated DB Split Squat', rx: ['3 × 8/leg @ 35–50 lb/hand, rest 2 min', 'Set a target to touch with the knee; work sideways to a mirror and keep the torso upright'] },
-  rfe2: { id: 'rfe', name: 'Rear-Foot-Elevated DB Split Squat', rx: ['3 × 8/leg @ 40–55 lb/hand, rest 2 min', 'Heavier than last time; full range, upright torso'] },
+  rfe: { id: 'rfe', name: 'Rear-Foot-Elevated DB Split Squat', rx: ['3 × 8/leg @ 35–50 lb/hand, rest 2 min'], cues: ['Set a target to touch with the knee; work sideways to a mirror and keep the torso upright'] },
+  rfe2: { id: 'rfe', name: 'Rear-Foot-Elevated DB Split Squat', rx: ['3 × 8/leg @ 40–55 lb/hand, rest 2 min'], cues: ['Heavier than last time; full range, upright torso'] },
   frl: { id: 'frl', name: 'Barbell Front-Rack Reverse Lunge', rx: ['3 × 8/leg, not alternating, rest 3 min'] },
   bwl: { id: 'bwl', name: 'Barbell Back-Rack Walking Lunge', rx: ['4 × 10 alternating, rest 3–4 min'] },
   fwl: { id: 'fwl', name: 'Barbell Front-Rack Walking Lunge', rx: ['4 × 10 alternating, rest 3–4 min'] },
@@ -68,7 +68,7 @@ export function singleLegFor(week) {
   const [key, mode] = SL_WEEKS[week];
   const base = SL[key];
   const note = mode === 'introduce' ? 'Increase weight each set if possible' : 'All sets at the peak weight you reached last time';
-  return { ...base, rx: [...base.rx, note], mode };
+  return { ...base, cues: [...(base.cues || []), note], mode };
 }
 
 // ---------- Day 2 D: bodyweight circuits ----------
@@ -97,13 +97,13 @@ export const mmWorkout = week => MM[(week - 1) % 8];
 
 // ---------- Day 3 A: run formats ----------
 const RUNS = {
-  R1: { name: 'Moderate / Fast / Walk × 10', rx: ['10 rounds: 1:00 moderate · 1:00 fast · 1:00 walk', 'Hold the moderate pace all the way; push the fast minute if you can'] },
-  R2: { name: 'Build 2-3-4', rx: ['3 × (2:00 run, pace rising each round · 1:00 walk)', '2 × (3:00 at your fastest 2:00 pace · 1:00 walk)', '1 × 4:00 at that pace · 2:00 walk', 'No rest between blocks'] },
-  R3: { name: 'Row-Run-Bike Ladder', rx: ['3 rounds; 30 s walk between rungs, 3:00 walk between rounds', '45 s row · 45 s run (shuttle) · 45 s bike', '60 s · 60 s · 60 s', '75 s · 75 s · 75 s', '90 s · 90 s · 90 s', 'Set a comfortable but challenging pace on the first rung and hold it'] },
-  R4: { name: 'Run-Ruck-Run', rx: ['20 min moderate run (about 5k pace)', '20 min ruck march at the cycle load', '20 min easy run', 'No rest: run out and back, ruck up and go out and back, dump the ruck and go straight back out'] },
-  R5: { name: 'Descending 6-5-4-3-2-1', rx: ['6:00 run · 1:00 walk', '5:00 · 1:00', '4:00 · 1:00', '3:00 · 1:00', '2:00 · 1:00', '1:00 · 1:00', 'Start at a moderate pace; each run faster than the last'] },
+  R1: { name: 'Moderate / Fast / Walk × 10', rx: ['10 rounds: 1:00 moderate · 1:00 fast · 1:00 walk'], cues: ['Hold the moderate pace all the way; push the fast minute if you can'] },
+  R2: { name: 'Build 2-3-4', rx: ['3 × (2:00 run, pace rising each round · 1:00 walk)', '2 × (3:00 at your fastest 2:00 pace · 1:00 walk)', '1 × 4:00 at that pace · 2:00 walk'], cues: ['No rest between blocks'] },
+  R3: { name: 'Row-Run-Bike Ladder', rx: ['3 rounds; 30 s walk between rungs, 3:00 walk between rounds', '45 s row · 45 s run (shuttle) · 45 s bike', '60 s · 60 s · 60 s', '75 s · 75 s · 75 s', '90 s · 90 s · 90 s'], cues: ['Set a comfortable but challenging pace on the first rung and hold it'] },
+  R4: { name: 'Run-Ruck-Run', rx: ['20 min moderate run (about 5k pace)', '20 min ruck march at the cycle load', '20 min easy run'], cues: ['No rest: run out and back, ruck up and go out and back, dump the ruck and go straight back out'] },
+  R5: { name: 'Descending 6-5-4-3-2-1', rx: ['6:00 run · 1:00 walk', '5:00 · 1:00', '4:00 · 1:00', '3:00 · 1:00', '2:00 · 1:00', '1:00 · 1:00'], cues: ['Start at a moderate pace; each run faster than the last'] },
   R6: { name: 'Pyramid', rx: ['4 × (1:00 easy · 1:00 walk)', '3 × (2:00, pace rising · 1:00 walk)', '2 × (3:00 at your fastest 2:00 pace · 1:00 walk)', '1 × 4:00 at that pace · 2:00 walk', '4 × (1:00 easy · 1:00 walk)'] },
-  TT5K: { name: '5k Run Time Trial', rx: ['5000 m for time', 'Warm up 10 min easy first; this sets your run paces for the next weeks'] },
+  TT5K: { name: '5k Run Time Trial', rx: ['Warm up 10 min easy', '5000 m for time'], cues: ['This sets your run paces for the next weeks'] },
   TEST1_5: { name: '1.5-Mile Run Test', rx: ['1.5 miles (2414 m) for time', 'Then 20 min easy'] },
 };
 export function runFormatText(code, week) {
@@ -134,10 +134,10 @@ export function wedOddFor(week) {
 export const pullVariant = week => (week % 2 === 1 ? 'a' : 'b');
 export function pullRx(variant) {
   return variant === 'a'
-    ? ['Weighted pull-ups 5 × 3–5, rest 2–3 min (DB between the feet or wear the ruck)', 'DB row 4 × 10/arm, rest 90 s', 'No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead']
-    : ['Pull-up ladder for 10 min: 1, 2, 3, 4, 5 … rest as needed; restart at 1 when you fail', 'Barbell row 4 × 8, rest 2 min', 'No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead'];
+    ? { rx: ['Weighted pull-ups 5 × 3–5, rest 2–3 min (DB between the feet or wear the ruck)', 'DB row 4 × 10/arm, rest 90 s'], cues: ['No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead'] }
+    : { rx: ['Pull-up ladder for 10 min: 1, 2, 3, 4, 5 … rest as needed; restart at 1 when you fail', 'Barbell row 4 × 8, rest 2 min'], cues: ['No 5 strict pull-ups yet? Do 5 × 8 inverted rows and 5 × 3 slow eccentric pull-ups instead'] };
 }
-export const armsRx = () => ['EZ-bar curl 3 × 10–12', 'EZ-bar skull crusher or dips 3 × 10–12', 'DB lateral raise 3 × 12–15', 'DB rear-delt fly 3 × 15', 'Rest 60–90 s. Beat last week by a rep or 5 lb'];
+export const armsRx = () => ({ rx: ['EZ-bar curl 3 × 10–12', 'EZ-bar skull crusher or dips 3 × 10–12', 'DB lateral raise 3 × 12–15', 'DB rear-delt fly 3 × 15'], cues: ['Rest 60–90 s between sets; beat last week by a rep or 5 lb'] });
 export const mobilityRx = () => ['10 min: hips (90/90 switches, couch stretch) · thoracic spine (open books, bench T-spine extension) · ankles (knee-to-wall)'];
 
 // ---------- Day 5 C: interval stations ----------

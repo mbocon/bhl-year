@@ -70,8 +70,8 @@ test('ruck formats and wednesday odd work', () => {
 });
 test('day 4 pieces', () => {
   assert.equal(pullVariant(1), 'a'); assert.equal(pullVariant(2), 'b');
-  assert.ok(pullRx('a').length >= 2); assert.ok(pullRx('b').length >= 2);
-  assert.ok(armsRx().length >= 3); assert.ok(mobilityRx().length >= 1);
+  assert.ok(pullRx('a').rx.length >= 2); assert.ok(pullRx('b').rx.length >= 2);
+  assert.ok(armsRx().rx.length >= 3); assert.ok(mobilityRx().length >= 1);
 });
 test('interval combos cover four categories', () => {
   for (let w = 1; w <= 13; w++) {

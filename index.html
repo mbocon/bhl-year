@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#f3f5f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Opaque status bar on purpose: with black-translucent, iOS 26 home-screen apps strand a status-bar-high
+       dead band at the bottom of the screen (WebKit bug 301108). iOS colors this bar from theme-color above. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BHL">
   <title>BHL Year</title>
   <link rel="manifest" href="manifest.webmanifest">

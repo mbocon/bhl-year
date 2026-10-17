@@ -56,7 +56,7 @@ export function renderScorecard(root, app) {
       const thr = [b.solid, b.strong, b.elite].filter(x => x !== null && x !== undefined).map(x => fmtThreshold(b, x)).join(' / ');
       return h('tr', null, h('td', null, b.label, thr ? h('div', { class: 'muted' }, thr) : null), ...cells, h('td', null, h('b', null, fmtValue(b, best, settings))));
     })));
-  root.append(h('div', { class: 'section' }, h('h2', null, 'Tests'), table,
+  root.append(h('div', { class: 'section' }, h('h2', null, 'Tests'), h('div', { class: 'scroll-x' }, table),
     h('p', { class: 'muted' }, 'Grey line under each test: solid / strong / elite reference marks. Motivational, not requirements.')));
 
   const lifts = h('div', { class: 'list' }, ...LIFTS.map(l => {

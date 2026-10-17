@@ -23,8 +23,8 @@ function heaviest(sets) {
 /** Resolve the rule/rx/inputs/test that apply for the chosen option (machine blocks carry altRules). */
 export function resolveBlock(block, optionId) {
   const alt = optionId && block.altRules && block.altRules[optionId];
-  if (!alt) return { rule: block.rule, rx: block.rx, inputs: block.inputs, test: block.test };
-  return { rule: alt.rule, rx: alt.rx || block.rx, inputs: alt.inputs || block.inputs, test: alt.test };
+  if (!alt) return { rule: block.rule, rx: block.rx, cues: block.cues, inputs: block.inputs, test: block.test };
+  return { rule: alt.rule, rx: alt.rx || block.rx, cues: alt.rx ? alt.cues : block.cues, inputs: alt.inputs || block.inputs, test: alt.test };
 }
 
 export function estimate1RM(evidence, { now = Date.now() } = {}) {

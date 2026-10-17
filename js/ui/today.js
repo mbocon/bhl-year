@@ -48,6 +48,13 @@ export function renderToday(root, app) {
   const dayDone = !!log.completedAt;
 
   const peek = delta => { ui.peekDay = Math.min(TOTAL, Math.max(1, n + delta)); ui.openKey = null; app.render(); };
+  const required = s.blocks.filter(b => !b.advanced);
+  const optional = s.blocks.filter(b => b.advanced);
+  const doneCount = () => required.filter(b => store.getLog(n)?.blocks?.[b.key]?.done).length;
+  const plural = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
+  const reqText = s.graduation ? 'Nothing left to log. Read on.'
+    : s.rest ? `Rest day${optional.length ? ` · ${plural(optional.length, 'optional block')}` : ''}`
+      : `${plural(required.length, 'block')} to do, in order${optional.length ? ` · ${optional.length} optional` : ''}`;
 
   // ----- header -----
   const pct = Math.round((completedCount(store) / TOTAL) * 100);
@@ -58,6 +65,7 @@ export function renderToday(root, app) {
       h('button', { class: 'nav', 'aria-label': 'Next day', onclick: () => peek(1), disabled: n >= TOTAL }, '›')),
     h('div', { class: 'meta' }, s.graduation ? 'Graduation' : `Cycle ${s.cycle} · Week ${s.week} · ${s.phaseLabel}${s.estMinutes ? ` · ~${s.estMinutes} min` : ''}`),
     h('div', { class: 'title' }, s.title),
+    h('div', { class: 'req' }, reqText),
     n !== current
       ? h('div', { class: 'peek' }, `You are on Day ${current}. `, h('a', { href: '#today', onclick: e => { e.preventDefault(); store.setCurrentDay(n); ui.peekDay = null; ui.openKey = null; app.render(); } }, `Set Day ${n} as current`))
       : null,
@@ -84,8 +92,10 @@ export function renderToday(root, app) {
     const vis = block.options ? visibleOptions(block.options, equipment) : null;
     const chosen = vis ? (vis.find(o => o.id === optionId) || vis[0]) : null;
     const keyFigure = resolved.rx?.[0] || '';
+    const longName = block.name.length > 26;         // long titles wrap onto two lines instead of sharing the row with a clipped figure
 
     const letter = h('div', { class: 'letter' + (block.advanced ? ' adv' : '') }, block.key);
+    const tag = block.advanced ? h('span', { class: 'tag' }, 'Optional') : null;
     const check = h('button', { class: 'check' + (done ? ' on' : ''), 'aria-label': done ? 'Mark not done' : 'Mark done', onclick: e => { e.stopPropagation(); toggleDone(); } }, done ? '✓' : '');
 
     function toggleDone() {
@@ -108,21 +118,26 @@ export function renderToday(root, app) {
 
     if (!isOpen) {
       return h('div', { class: 'card collapsed' + (done ? ' done' : '') + (block.advanced ? ' pm' : ''), onclick: () => { ui.openKey = block.key; app.render(); } },
-        h('div', { class: 'row' }, letter, h('div', { class: 'name' }, block.name), chosen && block.options.length > 1 ? h('span', { class: 'chip sel' }, chosen.name) : null, h('span', { class: 'fig' }, keyFigure), check));
+        h('div', { class: 'row' }, letter, h('div', { class: 'name' + (longName ? ' wide' : '') }, block.name), tag, chosen && block.options.length > 1 ? h('span', { class: 'chip sel' }, chosen.name) : null, longName ? null : h('span', { class: 'fig' }, keyFigure), check));
     }
 
     // expanded
     const target = targets(block, { history, settings, info: s, optionId, now: app.now() });
     const chips = vis && vis.length > 1
-      ? h('div', { class: 'chips' }, ...vis.map(o => h('button', { class: 'chip' + (o.id === chosen.id ? ' sel' : ''), onclick: e => { e.stopPropagation(); store.setChoice(block.slotKey, o.id); write({ optionId: o.id }); app.render(); } }, o.name)))
+      ? h('div', { class: 'pick' }, h('div', { class: 'pick-k' }, 'Choose one'),
+        h('div', { class: 'chips' }, ...vis.map(o => h('button', { class: 'chip' + (o.id === chosen.id ? ' sel' : ''), onclick: e => { e.stopPropagation(); store.setChoice(block.slotKey, o.id); write({ optionId: o.id }); app.render(); } }, (o.id === chosen.id ? '✓ ' : '') + o.name))))
       : null;
-    const rx = h('div', { class: 'rx' }, ...(resolved.rx || []).map(line => h('div', null, line)));
-    const items = block.items ? h('ul', { class: 'items' }, ...block.items.map(it => {
-      const v = it.options ? visibleOptions(it.options, equipment) : null;
-      const main = v ? v[0].name : it.text;
-      const alts = v ? v.slice(1).map(o => o.name) : [];
-      return h('li', null, main, alts.length ? h('span', { class: 'alts' }, ` or: ${alts.join(' / ')}`) : null);
-    })) : null;
+    const rx = h('div', { class: 'rx' }, ...(resolved.rx || []).map(line => h('div', { class: 'rx-line' }, line)));
+    const items = block.items ? h('div', { class: 'items-wrap' }, h('div', { class: 'items-k' }, block.itemsLabel || 'Stations'),
+      h('ol', { class: 'items' }, ...block.items.map(it => {
+        const v = it.options ? visibleOptions(it.options, equipment) : null;
+        const main = v ? v[0].name : it.text;
+        const alts = v ? v.slice(1).map(o => o.name) : [];
+        return h('li', null, h('div', { class: 'it' }, main), alts.length ? h('div', { class: 'alt' }, h('span', { class: 'or' }, 'or'), alts.join(' / ')) : null);
+      }))) : null;
+    const cues = resolved.cues && resolved.cues.length
+      ? h('div', { class: 'cues' }, ...resolved.cues.map(c => h('div', { class: 'cue' }, h('span', { class: 'cue-k' }, 'Cue'), c)))
+      : null;
     const targetBox = target && target.text
       ? h('div', { class: 'target' + (target.missing ? ' soft' : '') }, target.text, target.sub ? h('small', null, target.sub) : null)
       : null;
@@ -183,8 +198,8 @@ export function renderToday(root, app) {
     const notes = h('input', { class: 'notes', type: 'text', placeholder: 'Add a note', value: blog.notes ?? '', oninput: e => write({ notes: e.target.value }) });
 
     return h('div', { class: 'card open' + (done ? ' done' : '') + (block.advanced ? ' pm' : '') },
-      h('div', { class: 'row', onclick: () => { ui.openKey = null; app.render(); } }, letter, h('div', { class: 'name' }, block.name), check),
-      chips, rx, items, targetBox, inputs,
+      h('div', { class: 'row', onclick: () => { ui.openKey = null; app.render(); } }, letter, h('div', { class: 'name' }, block.name), tag, check),
+      chips, rx, items, cues, targetBox, inputs,
       h('div', { class: 'foot' }, notes));
   };
 
@@ -204,6 +219,10 @@ export function renderToday(root, app) {
       store.completeDay(n); ui.peekDay = null; ui.openKey = null; app.render(); window.scrollTo(0, 0);
     } }, ctaLabel);
 
+  const dc = doneCount();
+  const ctaNote = dayDone || s.graduation || s.rest ? null
+    : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} blocks marked done` : `${dc} of ${required.length} blocks marked done`);
+
   clear(root);
-  root.append(header, ...banners, h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), cta);
+  root.append(header, ...banners, h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
 }
