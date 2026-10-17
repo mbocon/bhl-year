@@ -1,5 +1,6 @@
 // Local-storage state: settings, runs, logs, tests, choices, backup. Pure JS, no DOM.
 import { dayInfo } from './calendar.js';
+import { weightTrend, planReview } from './nutrition.js';
 
 export const STORAGE_KEY = 'bhl-year-v1';
 export const STATE_VERSION = 1;
@@ -22,6 +23,7 @@ export function defaultSettings(runId) {
   };
 }
 
+const defaultNutrition = () => ({ kcalAdjust: 0, lastReviewISO: null, log: [] });
 function freshState() {
   const id = newRunId();
   return {
@@ -31,7 +33,16 @@ function freshState() {
     runs: [{ id, startedAt: Date.now(), endedAt: null }],
     logs: { [id]: {} },
     tests: {},
+    weights: {},                 // scale weight by calendar date, across runs
+    nutrition: defaultNutrition(),
   };
+}
+// Older saved states and backups predate weights/nutrition: fill them in rather than reject them.
+function migrate(st) {
+  st.weights ??= {};
+  st.nutrition ??= defaultNutrition();
+  st.nutrition.log ??= [];
+  return st;
 }
 
 function isValidState(obj) {
@@ -64,7 +75,7 @@ export function createStore(storage = globalThis.localStorage) {
     }
   }
   const deferInitialSave = !!raw && !state;
-  if (!state) state = freshState();
+  if (!state) state = freshState(); else migrate(state);
 
   const save = () => {
     if (!storage) { persistent = false; return; }
@@ -174,6 +185,26 @@ export function createStore(storage = globalThis.localStorage) {
       store.recordTest(testId, value, n);
     },
 
+    weights: () => state.weights,
+    logWeight(dateISO, lb) {
+      if (Number.isFinite(lb) && lb > 0) state.weights[dateISO] = lb; else delete state.weights[dateISO];
+      save();
+    },
+    nutrition: () => state.nutrition,
+    /** Bodyweight for ×BW figures: the 7-day scale average when there is one, else the typed bodyweight. */
+    bodyweightNow(todayISO) { const t = weightTrend(state.weights, todayISO); return t ? t.avg7 : state.settings.bodyweight; },
+    /** Run the automatic calorie review if one is due today; idempotent until the next review date. */
+    runReview({ todayISO, day }) {
+      const r = planReview({ settings: state.settings, nutrition: state.nutrition, weights: state.weights, todayISO, day });
+      if (r.review) {
+        state.nutrition.kcalAdjust += r.review.delta;
+        state.nutrition.lastReviewISO = r.review.dateISO;
+        state.nutrition.log.push(r.review);
+        save();
+      }
+      return r;
+    },
+
     getChoice: slotKey => state.choices[slotKey],
     setChoice(slotKey, optionId) { state.choices[slotKey] = optionId; save(); },
 
@@ -183,7 +214,7 @@ export function createStore(storage = globalThis.localStorage) {
       let parsed;
       try { parsed = JSON.parse(text); } catch { return { ok: false, error: 'Not a valid backup file.' }; }
       if (!isValidState(parsed)) return { ok: false, error: 'Backup is from a different version or is incomplete.' };
-      state = parsed;
+      state = migrate(parsed);
       save();
       return { ok: true };
     },

@@ -94,6 +94,10 @@ button { font: inherit; }
 .notes { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--card-border); color: var(--text); font-size: 14px; padding: 8px 2px; min-height: 40px; }
 .cta { display: block; width: 100%; margin: 14px 0 0; height: 54px; border-radius: 14px; border: none; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 17px; }
 .cta.done { background: var(--card); color: var(--muted); border: 1px solid var(--card-border); }
+.weigh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+.weigh .lab { font-size: 12px; color: var(--muted); flex: 0 0 auto; }
+.weigh .in { flex: 0 0 96px; height: 40px; font-size: 16px; }
+.weigh .trend { flex: 1 1 150px; min-width: 0; font-size: 12px; color: var(--muted); line-height: 1.3; }
 .cta-note { margin-top: 16px; text-align: center; font-size: 13px; color: var(--muted); }
 .cta-note + .cta { margin-top: 8px; }
 

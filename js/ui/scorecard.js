@@ -4,6 +4,7 @@ import { BENCHMARKS } from '../benchmarks.js';
 import { dayInfo } from '../calendar.js';
 import { fmtTime } from '../format.js';
 import { estimate1RM, fmtLoad } from '../engine.js';
+import { todayOf } from '../nutrition.js';
 
 const LIFTS = ['backsquat', 'frontsquat', 'deadlift', 'bench', 'ohp', 'clean'];
 const LIFT_LABEL = { backsquat: 'Back squat', frontsquat: 'Front squat', deadlift: 'Deadlift', bench: 'Bench press', ohp: 'Overhead press', clean: 'Clean' };
@@ -28,7 +29,7 @@ function better(b, a, c) { if (a === null) return c; if (c === null) return a; r
 
 export function renderScorecard(root, app) {
   const { store } = app;
-  const settings = store.settings();
+  const settings = { ...store.settings(), bodyweight: store.bodyweightNow(todayOf(app)) };   // ×BW uses the 7-day scale average
   const runs = store.state.runs;
   const runIndex = Object.fromEntries(runs.map((r, i) => [r.id, i + 1]));
   clear(root);

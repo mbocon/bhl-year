@@ -33,7 +33,7 @@ test('typing only weights on a ladder still seeds next week start', () => {
   const app = fresh();
   app.store.setCurrentDay(2); app.render();
   app.ui.openKey = 'A'; app.render();
-  const ins = findAll('input.in');
+  const ins = findAll('input.in').filter(i => i.parent._cls.has('set'));   // set rows only, not the scale weigh-in
   ins[0].input('315'); ins[2].input('335'); ins[4].input('355');
   clickCta();
   app.store.setCurrentDay(9); app.ui.peekDay = null; app.ui.openKey = 'A'; app.render();

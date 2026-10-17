@@ -1,6 +1,6 @@
 // Settings: pointer, units, advanced, HR, equipment, nutrition, backup, restore, resets.
 import { h, clear } from './dom.js';
-import { macroPlan, MIKE_EXAMPLE } from '../nutrition.js';
+import { macroPlan, MIKE_EXAMPLE, weightTrend, trendText, nextReviewISO, REVIEW, fmtISO, todayOf } from '../nutrition.js';
 import { backupFilename, shareOrDownload } from '../backup.js';
 import { maxHRFrom, hrRange } from '../format.js';
 
@@ -33,7 +33,7 @@ export function renderSettings(root, app) {
   root.append(h('div', { class: 'section' }, h('h2', null, 'You'),
     field('Max heart rate', num(s.maxHR, v => { store.updateSettings({ maxHR: v }); app.render(); }, 'bpm'), mhr ? `Zone 2: ${hrRange(mhr).join('–')} bpm` : 'Or enter age below'),
     field('Age', num(s.age, v => { store.updateSettings({ age: v }); app.render(); }, 'years'), 'Used as 220 − age when max HR is blank'),
-    field('Bodyweight (lb)', num(s.bodyweight, v => { store.updateSettings({ bodyweight: v }); app.render(); }, 'lb'), 'Scorecard ×BW lifts; macros when no goal is set'),
+    field('Bodyweight (lb)', num(s.bodyweight, v => { store.updateSettings({ bodyweight: v }); app.render(); }, 'lb'), 'Scorecard ×BW lifts (your 7-day scale average once you log weigh-ins); macros when no goal is set'),
     field('Goal weight (lb)', num(s.goalWeight, v => { store.updateSettings({ goalWeight: v }); app.render(); }, 'lb'), 'Macros are computed from this, so the deficit closes as you get there'),
   ));
 
@@ -43,13 +43,17 @@ export function renderSettings(root, app) {
     ...EQUIPMENT.map(([k, label]) => field(label, toggle(!!s.equipment[k], () => { store.updateSettings({ equipment: { [k]: !s.equipment[k] } }); app.render(); })))));
 
   // Nutrition
-  const m = macroPlan(s);
+  const m = macroPlan(s, store.nutrition());
+  const todayISO = todayOf(app);
+  const nut = store.nutrition();
+  const tr = weightTrend(store.weights(), todayISO);
+  const nextISO = m && m.basis === 'goal' ? nextReviewISO(nut, store.weights()) : null;
   const goalNote = m && m.basis === 'goal'
-    ? `Computed from your goal weight${s.bodyweight ? `, not your current ${s.bodyweight} lb` : ''}: the deficit is biggest now and reaches maintenance when you arrive. Keep protein at ${m.protein} g all the way down; ${m.fat} g fat is the floor (trade carbs for fat if hunger or energy is poor). Judge it by the scale's weekly average: under 0.7 lb a week for three weeks, cut 150–200 kcal from carbs; over 2 lb a week after the first fortnight, add some back.`
+    ? `Computed from your goal weight${s.bodyweight ? `, not your current ${s.bodyweight} lb` : ''}: the deficit is biggest now and reaches maintenance when you arrive. Keep protein at ${m.protein} g all the way down; ${m.fat} g fat is the floor (trade carbs for fat if hunger or energy is poor). Log your scale weight daily and the review below moves calories for you.`
     : null;
   root.append(h('div', { class: 'section' }, h('h2', null, 'Macros that paired with BHL'),
     h('div', { class: 'card plain' },
-      h('div', { class: 'muted' }, 'Guideline, not medical advice. Recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; adjust by 100–200 kcal every two weeks based on the mirror and the log.'),
+      h('div', { class: 'muted' }, 'Guideline, not medical advice. Recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; ' + (m && m.basis === 'goal' ? 'with a goal weight set, the automatic review below adjusts calories every two weeks.' : 'adjust by 100–200 kcal every two weeks based on the mirror and the log.')),
       h('table', { class: 'sc', style: 'margin-top:10px' },
         h('thead', null, h('tr', null, h('th', null, ''), h('th', null, m ? (m.basis === 'goal' ? `Eat · goal ${m.weight} lb` : `You (${m.weight} lb)`) : 'You'), h('th', null, "Mike's original"))),
         h('tbody', null,
@@ -58,6 +62,15 @@ export function renderSettings(root, app) {
           h('tr', null, h('td', null, 'Fat (g)'), h('td', null, m ? m.fat : '—'), h('td', null, MIKE_EXAMPLE.fat)),
           h('tr', null, h('td', null, 'Carbs (g)'), h('td', null, m ? m.carbs : '—'), h('td', null, MIKE_EXAMPLE.carbs)))),
       goalNote ? h('div', { class: 'muted', style: 'margin-top:8px' }, goalNote) : null,
+      h('div', { class: 'muted', style: 'margin-top:8px' }, tr
+        ? `Scale: ${trendText(tr, m && m.basis === 'goal' ? m.weight : null, s.currentDay)} (${tr.n7} weigh-ins this week).`
+        : 'Log your scale weight on the Today screen most mornings; the trend appears after three weigh-ins.'),
+      m && m.basis === 'goal' ? h('div', { class: 'muted', style: 'margin-top:8px' },
+        `Automatic review every ${REVIEW.everyDays} days, the first ${REVIEW.skipDays} days after your first weigh-in, needing ${REVIEW.minPerWeek} weigh-ins in each of the last two weeks: losing under ${REVIEW.slow} lb/week cuts ${REVIEW.step} kcal from carbs, over ${REVIEW.fast} lb/week adds ${REVIEW.step} back, floor ${REVIEW.floorKcal} kcal.`
+        + (nextISO ? ` Next review: ${fmtISO(nextISO)}${nextISO <= todayISO ? ' (waiting for enough weigh-ins)' : ''}.` : ' Log a weigh-in to start the clock.')
+        + (m.adjust ? ` Current adjustment: ${m.adjust > 0 ? '+' : '−'}${Math.abs(m.adjust)} kcal.` : '')) : null,
+      nut.log.length ? h('div', { class: 'muted', style: 'margin-top:8px' }, 'Reviews so far:',
+        ...nut.log.slice(-6).reverse().map(r => h('div', null, `Day ${r.day} · ${r.rate.toFixed(1)} lb/wk · ${r.delta === 0 ? (r.atGoal ? 'at goal, hold' : 'hold') : (r.delta > 0 ? '+' : '−') + Math.abs(r.delta)} → ${r.kcal} kcal`))) : null,
       h('div', { class: 'muted', style: 'margin-top:8px' }, '14 kcal, 1 g protein, 0.27 g fat per lb; carbs fill the rest.' + (m ? '' : ' Enter a bodyweight or goal weight above.')))));
 
   // Backup

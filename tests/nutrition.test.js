@@ -26,8 +26,8 @@ test('benchmarks', () => {
 });
 test('macroPlan eats for the goal weight when one is set, otherwise the current weight', async () => {
   const { macroPlan } = await import('../js/nutrition.js');
-  assert.deepEqual(macroPlan({ bodyweight: 273, goalWeight: 220 }), { basis: 'goal', weight: 220, kcal: 3080, protein: 220, fat: 59, carbs: 417 });
-  assert.deepEqual(macroPlan({ bodyweight: 200 }), { basis: 'current', weight: 200, kcal: 2800, protein: 200, fat: 54, carbs: 379 });
+  assert.deepEqual(macroPlan({ bodyweight: 273, goalWeight: 220 }), { basis: 'goal', weight: 220, adjust: 0, kcal: 3080, protein: 220, fat: 59, carbs: 417 });
+  assert.deepEqual(macroPlan({ bodyweight: 200 }), { basis: 'current', weight: 200, adjust: 0, kcal: 2800, protein: 200, fat: 54, carbs: 379 });
   assert.equal(macroPlan({ goalWeight: 220 }).basis, 'goal');
   assert.equal(macroPlan({}), null);
   assert.equal(macroPlan({ bodyweight: 273, goalWeight: 0 }).basis, 'current');

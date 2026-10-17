@@ -5,16 +5,19 @@ import { renderToday } from './ui/today.js';
 import { renderDays } from './ui/days.js';
 import { renderScorecard } from './ui/scorecard.js';
 import { renderSettings } from './ui/settings.js';
+import { isoDate } from './nutrition.js';
 
 export function createApp(doc) {
   const store = createStore();
   const app = {
     store,
     now: () => Date.now(),
+    today: () => isoDate(app.now()),
     ui: { peekDay: null, openKey: null },
     route: 'today',
     views: { today: renderToday, days: renderDays, scorecard: renderScorecard, settings: renderSettings },
     render() {
+      store.runReview({ todayISO: app.today(), day: store.settings().currentDay });
       const root = doc.getElementById('view');
       (app.views[app.route] || app.views.today)(root, app);
       for (const a of doc.querySelectorAll('.tabs a')) a.classList.toggle('on', a.dataset.route === app.route);

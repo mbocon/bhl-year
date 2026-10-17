@@ -5,6 +5,7 @@ import { targets, defaultOptionId, resolveBlock } from '../engine.js';
 import { visibleOptions } from '../program/rotations.js';
 import { parseTime, fmtTime, roundLoad, lbToKg, kgToLb } from '../format.js';
 import { go } from './router.js';
+import { weightTrend, trendText, macroPlan, todayOf } from '../nutrition.js';
 
 const DAY_MS = 86400e3;
 const TOTAL = 365;
@@ -77,6 +78,25 @@ export function renderToday(root, app) {
   const last = settings.lastExportAt;
   if (completedCount(store) > 0 && (!last || app.now() - last > 14 * DAY_MS)) {
     banners.push(h('div', { class: 'banner' }, last ? 'Your last backup is over two weeks old. ' : 'No backup yet. ', h('a', { href: '#settings', onclick: e => { e.preventDefault(); go('settings'); } }, 'Save one in Settings')));
+  }
+
+  // ----- scale weight (current day only) -----
+  let weigh = null;
+  if (n === current && !s.graduation) {
+    const todayISO = todayOf(app);
+    const wToday = store.weights()[todayISO];
+    const tr = weightTrend(store.weights(), todayISO);
+    const plan = macroPlan(settings, store.nutrition());
+    const tt = trendText(tr, plan && plan.basis === 'goal' ? plan.weight : null, current);
+    const shown = wToday == null ? '' : units === 'kg' ? Math.round(lbToKg(wToday) * 10) / 10 : wToday;
+    weigh = h('div', { class: 'weigh' },
+      h('span', { class: 'lab' }, 'Scale today'),
+      h('input', { class: 'in', type: 'text', inputmode: 'decimal', placeholder: units, value: shown, onchange: e => {
+        const x = parseFloat(e.target.value);
+        store.logWeight(todayISO, Number.isFinite(x) ? (units === 'kg' ? Math.round(kgToLb(x) * 10) / 10 : x) : null);
+        app.render();
+      } }),
+      h('span', { class: 'trend' }, tt || 'Log most mornings; the trend appears after three weigh-ins'));
   }
 
   // ----- blocks -----
@@ -224,5 +244,5 @@ export function renderToday(root, app) {
     : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} blocks marked done` : `${dc} of ${required.length} blocks marked done`);
 
   clear(root);
-  root.append(header, ...banners, h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
+  root.append(header, ...banners, ...[weigh].filter(Boolean), h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
 }
