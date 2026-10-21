@@ -1,7 +1,5 @@
-// Macro guideline that generalizes the diet Mike paired with BHL (spec §5.7), plus the scale-weight trend and the
+// Bodyweight-scaled macro guideline that pairs with BHL (spec §5.7), plus the scale-weight trend and the
 // automatic 14-day calorie review. Guidance, not medical advice. Pure functions; dates are 'YYYY-MM-DD' strings.
-
-export const MIKE_EXAMPLE = { kcal: 2800, protein: 180, fat: '50–60', carbs: 395 };
 
 export function macros(bodyweightLb, adjust = 0) {
   if (!Number.isFinite(bodyweightLb) || bodyweightLb <= 0) return null;

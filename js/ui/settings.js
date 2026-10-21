@@ -1,6 +1,6 @@
 // Settings: pointer, units, advanced, HR, equipment, nutrition, backup, restore, resets.
 import { h, clear } from './dom.js';
-import { macroPlan, MIKE_EXAMPLE, weightTrend, trendText, nextReviewISO, REVIEW, fmtISO, todayOf } from '../nutrition.js';
+import { macroPlan, weightTrend, trendText, nextReviewISO, REVIEW, fmtISO, todayOf } from '../nutrition.js';
 import { backupFilename, shareOrDownload } from '../backup.js';
 import { maxHRFrom, hrRange } from '../format.js';
 
@@ -55,12 +55,12 @@ export function renderSettings(root, app) {
     h('div', { class: 'card plain' },
       h('div', { class: 'muted' }, 'Guideline, not medical advice. Recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; ' + (m && m.basis === 'goal' ? 'with a goal weight set, the automatic review below adjusts calories every two weeks.' : 'adjust by 100–200 kcal every two weeks based on the mirror and the log.')),
       h('table', { class: 'sc', style: 'margin-top:10px' },
-        h('thead', null, h('tr', null, h('th', null, ''), h('th', null, m ? (m.basis === 'goal' ? `Eat · goal ${m.weight} lb` : `You (${m.weight} lb)`) : 'You'), h('th', null, "Mike's original"))),
+        h('thead', null, h('tr', null, h('th', null, ''), h('th', null, m ? (m.basis === 'goal' ? `Eat · goal ${m.weight} lb` : `You (${m.weight} lb)`) : 'You'))),
         h('tbody', null,
-          h('tr', null, h('td', null, 'Calories'), h('td', null, m ? m.kcal : '—'), h('td', null, MIKE_EXAMPLE.kcal)),
-          h('tr', null, h('td', null, 'Protein (g)'), h('td', null, m ? m.protein : '—'), h('td', null, MIKE_EXAMPLE.protein)),
-          h('tr', null, h('td', null, 'Fat (g)'), h('td', null, m ? m.fat : '—'), h('td', null, MIKE_EXAMPLE.fat)),
-          h('tr', null, h('td', null, 'Carbs (g)'), h('td', null, m ? m.carbs : '—'), h('td', null, MIKE_EXAMPLE.carbs)))),
+          h('tr', null, h('td', null, 'Calories'), h('td', null, m ? m.kcal : '—')),
+          h('tr', null, h('td', null, 'Protein (g)'), h('td', null, m ? m.protein : '—')),
+          h('tr', null, h('td', null, 'Fat (g)'), h('td', null, m ? m.fat : '—')),
+          h('tr', null, h('td', null, 'Carbs (g)'), h('td', null, m ? m.carbs : '—')))),
       goalNote ? h('div', { class: 'muted', style: 'margin-top:8px' }, goalNote) : null,
       h('div', { class: 'muted', style: 'margin-top:8px' }, tr
         ? `Scale: ${trendText(tr, m && m.basis === 'goal' ? m.weight : null, s.currentDay)} (${tr.n7} weigh-ins this week).`

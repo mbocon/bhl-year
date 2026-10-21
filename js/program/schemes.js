@@ -65,8 +65,11 @@ export function densityFormat(week) {
   return { kind: 'tests' };
 }
 
-export function mmRounds(week) {
+export const MM_CAP_MINUTES = 20;
+const MM_RAMP = { 1: 3, 2: 3, 3: 4 };   // first cycle only: reach the full dose by week 4
+export function mmRounds(week, { firstCycle = false } = {}) {
   if (week === 13) return 0;
+  if (firstCycle && MM_RAMP[week]) return MM_RAMP[week];
   if (week <= 7) return 5;
   if (week <= 10) return 6;
   return week === 11 ? 8 : 7;

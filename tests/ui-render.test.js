@@ -68,3 +68,13 @@ test('settings status message survives the re-render after saving a backup', asy
   assert.match(text(document.getElementById("view")), /Downloaded\.|Copied to clipboard/);
   assert.ok(app.store.settings().lastExportAt, 'lastExportAt stamped after a successful copy');
 });
+
+test('settings macro card has no personal comparison column', () => {
+  const app = fresh();
+  app.store.updateSettings({ bodyweight: 200 });
+  app.route = 'settings'; app.render();
+  const t = text(document.getElementById('view'));
+  assert.doesNotMatch(t, /Mike/);
+  assert.doesNotMatch(t, /original/);
+  assert.match(t, /You \(200 lb\)/);
+});

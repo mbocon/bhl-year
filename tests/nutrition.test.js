@@ -1,16 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { macros, MIKE_EXAMPLE } from '../js/nutrition.js';
+import { macros } from '../js/nutrition.js';
 import { BENCHMARKS } from '../js/benchmarks.js';
 
-test('macros at 200 lb reproduce Mike-scale numbers', () => {
+test('macros at 200 lb', () => {
   assert.deepEqual(macros(200), { kcal: 2800, protein: 200, fat: 54, carbs: 379 });
   assert.equal(macros(0), null);
   assert.equal(macros(NaN), null);
-});
-test('example constant', () => {
-  assert.equal(MIKE_EXAMPLE.kcal, 2800);
-  assert.equal(MIKE_EXAMPLE.protein, 180);
 });
 test('benchmarks', () => {
   const row = BENCHMARKS.find(b => b.test === 'row2k');

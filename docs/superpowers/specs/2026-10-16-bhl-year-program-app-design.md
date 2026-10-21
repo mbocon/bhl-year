@@ -82,7 +82,7 @@ This is BHL's 14-week Cycle 1 with its frozen weeks removed and the field tests 
 | Day | Name | Blocks | Time |
 |---|---|---|---|
 | 1 | Squat + Intervals | A plyo · B back squat · C machine intervals (rower or air bike, user's choice) · D core | 90–105 min |
-| 2 | Hinge + Press + Work Capacity | A deadlift ladder · B single-leg · C press ladder · D bodyweight EMOM · E mixed modal at moderate pace · F (weeks 1–4 only) 10-min easy flush | 105–120 min |
+| 2 | Hinge + Press + Work Capacity | A deadlift ladder · B single-leg · C press ladder · D bodyweight EMOM · E mixed modal at moderate pace, 20-min cap | 95–105 min |
 | 3 | Run + Ruck | A run intervals · B ruck march · C crawls, drags, odd-object work | 75–120 min |
 | 4 | Zone 2 + Pull + Press | A zone 2 (bike, row, or run) · B pull strength · C the press Day 2 is not laddering this phase, 4×6, then arms · D mobility | 55–85 min |
 | 5 | Clean + Front Squat + Intervals | A clean · B front squat · C 45/45 or 60/60 intervals · D core | 80–95 min |
@@ -178,7 +178,7 @@ Circuit A: inverted row under a bar in the rack · dips on the rack attachment �
 Circuit B: strict pull-ups · hand-release push-ups · air squats · sit-ups.
 Format by week: w1–5 EMOM 16 min, 30 s work per minute · w6–10 EMOM 20 min · w11–12 every 90 s for 16 sets, 45 s work · w13 the tests (2-minute push-ups, 2-minute sit-ups, max strict pull-ups, 5 min rest between).
 
-**Day 2 E — Mixed modal at moderate pace.** "Keep consistent times across all rounds." Rounds: w1–7: 5 · w8–10: 6 · w11: 8 with 20 lb in the ruck · w12: 7 with ruck · w13: none. Eight workouts rotate w1–w12 (w1 = MM1, w2 = MM2, …, w9 = MM1 again). Every item below is feasible with the default equipment.
+**Day 2 E — Mixed modal at moderate pace.** "Keep consistent times across all rounds." Rounds: w1–7: 5 · w8–10: 6 · w11: 8 with 20 lb in the ruck · w12: 7 with ruck · w13: none. Hard cap of 20 minutes every week ("N rounds or 20 min, whichever comes first"; stop mid-round and log the rounds finished), so the day always ends on time (changed 2026-10-20 after week 1 ran long). Cycle 1 only ramps in: w1 3 rounds · w2 3 · w3 4 · w4 onward as written; cycles 2–4 and the week-1 reset after a deload start at the full dose. Eight workouts rotate w1–w12 (w1 = MM1, w2 = MM2, …, w9 = MM1 again). Every item below is feasible with the default equipment.
 - MM1: 30 s air bike · 15 thrusters @75–95 lb · 10 lateral burpees over bar · 400 m run
 - MM2: 15 DB swings @50–70 lb · 4 towel pull-ups [option: 2 rope climbs] · 10×50 ft burpee shuttle
 - MM3: 10 pull-ups · 15 step-overs on bench · 200 ft bear crawl · 400 m run
@@ -188,7 +188,7 @@ Format by week: w1–5 EMOM 16 min, 30 s work per minute · w6–10 EMOM 20 min 
 - MM7: 250 m row · 20 lateral bar hops · 15 thrusters @75–95 · 10 burpee step-ups to bench
 - MM8: 200 m run · 12 alternating DB power snatch @40–60 lb · 10 no-jump burpees · 60 s walk
 
-**Day 2 F (w1–4 only)** — 10 min easy: alternate 1 min row or bike / 1 min step-ups.
+**Day 2 F** — removed 2026-10-20 (was a 10-min easy flush in w1–4); the 20-min cap on E is what keeps the day inside the time budget.
 
 **Day 3 A — Run intervals.** "Moderate" = 5k pace + 60–75 s/km, "fast" = 5k pace, "easy" = 5k pace + 90–120 s/km. Before the first 5k test the app says "comfortable but challenging."
 | w | Format |
@@ -370,7 +370,7 @@ Export offers the entire JSON object three ways, because phones differ: the syst
 
 ### 5.7 Nutrition card
 
-In Settings, labeled "Macros that paired with BHL (guideline, not medical advice)". Inputs: bodyweight and an optional goal weight (added 2026-10-16). The card computes from the goal weight when one is set, otherwise from bodyweight; the Scorecard's ×BW figures always use bodyweight. Output per day: protein 1.0 g per lb; fat 0.27 g per lb; calories 14 × weight; carbs = remaining calories ÷ 4. The 14 kcal/lb figure was calibrated on Mike at about 200 lb and overshoots at much higher bodyweights, which is why a cut eats for the goal weight. Daily scale weight (added 2026-10-16): logged by calendar date from a one-field row on the Today screen, kept across runs and in backups; the card and the Scorecard's ×BW figures use the 7-day average. Automatic review every 14 days, the first 28 days after the first weigh-in and only with 4 weigh-ins in each of the last two weeks: weekly loss under 0.7 lb cuts 150 kcal from carbs, over 2 lb adds 150 back, floor 2400 kcal; each review is logged on the card with its trend and resulting calories. Shown next to Mike's original numbers as the worked example (2800 kcal, 180 g protein, 50–60 g fat, ~395 g carbs). A one-line note: recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; adjust by 100–200 kcal every two weeks based on the mirror and the log.
+In Settings, labeled "Macros that paired with BHL (guideline, not medical advice)". Inputs: bodyweight and an optional goal weight (added 2026-10-16). The card computes from the goal weight when one is set, otherwise from bodyweight; the Scorecard's ×BW figures always use bodyweight. Output per day: protein 1.0 g per lb; fat 0.27 g per lb; calories 14 × weight; carbs = remaining calories ÷ 4. The 14 kcal/lb figure was calibrated on Mike at about 200 lb and overshoots at much higher bodyweights, which is why a cut eats for the goal weight. Daily scale weight (added 2026-10-16): logged by calendar date from a one-field row on the Today screen, kept across runs and in backups; the card and the Scorecard's ×BW figures use the 7-day average. Automatic review every 14 days, the first 28 days after the first weigh-in and only with 4 weigh-ins in each of the last two weeks: weekly loss under 0.7 lb cuts 150 kcal from carbs, over 2 lb adds 150 back, floor 2400 kcal; each review is logged on the card with its trend and resulting calories. The card shows only the user's own numbers (the personal worked-example column was removed 2026-10-20 so the app reads the same for anyone). A one-line note: recomp works at roughly maintenance with high protein and enough carbs to fuel this volume; adjust by 100–200 kcal every two weeks based on the mirror and the log.
 
 ### 5.8 Non-functional
 

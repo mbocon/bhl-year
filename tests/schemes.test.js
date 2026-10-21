@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   squatScheme, frontSquatScheme, deadliftScheme, pressScheme, cleanScheme, rowScheme, bikeScheme,
-  runFormat, densityFormat, mmRounds, mmVest, longDuration, zone2Minutes, ruckLoad, ruckTestMiles,
+  runFormat, densityFormat, mmRounds, mmVest, MM_CAP_MINUTES, longDuration, zone2Minutes, ruckLoad, ruckTestMiles,
   pressLiftFor, cleanVariantFor,
 } from '../js/program/schemes.js';
 
@@ -72,6 +72,9 @@ test('density and mm', () => {
   assert.deepEqual(densityFormat(11), { kind: 'e90', sets: 16, work: 45 });
   assert.equal(densityFormat(13).kind, 'tests');
   assert.deepEqual([1, 7, 8, 11, 12, 13].map(mmRounds), [5, 5, 6, 8, 7, 0]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(w => mmRounds(w, { firstCycle: true })), [3, 3, 4, 5, 5], 'cycle 1 ramps to the full dose by week 4');
+  assert.equal(mmRounds(13, { firstCycle: true }), 0);
+  assert.equal(MM_CAP_MINUTES, 20);
   assert.equal(mmVest(11), true);
   assert.equal(mmVest(10), false);
 });

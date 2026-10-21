@@ -153,7 +153,7 @@ export function day1(ctx) {
 }
 
 export function day2(ctx) {
-  const { info } = ctx;
+  const { info, firstCycle } = ctx;
   const w = info.week;
   const blocks = [ladderBlock('A', 'deadlift', S.deadliftScheme(w), 2)];
   const sl = R.singleLegFor(w);
@@ -174,14 +174,15 @@ export function day2(ctx) {
     blocks.push({ key: 'D', slotKey: `d2.D.bw.${c.id}`, name: `Bodyweight Circuit ${c.id}`, rule: { type: 'density', format: fmtId },
       rx: [line], items: c.stations.map(s => ({ text: s })), itemsLabel: 'Stations', inputs: [reps('Total reps (optional)')] });
   }
-  const rounds = S.mmRounds(w);
+  const rounds = S.mmRounds(w, { firstCycle });
   if (rounds > 0) {
     const mm = R.mmWorkout(w);
-    blocks.push({ key: 'E', slotKey: `d2.E.mm.${mm.id}`, name: 'Mixed Modal · Moderate Pace', rule: { type: 'consistency', rounds },
-      rx: [`${rounds} rounds at a moderate pace${S.mmVest(w) ? ' · 20 lb in the ruck' : ''}`], cues: ['Keep consistent times across all rounds'],
+    const cap = S.MM_CAP_MINUTES;
+    blocks.push({ key: 'E', slotKey: `d2.E.mm.${mm.id}`, name: 'Mixed Modal · Moderate Pace', rule: { type: 'consistency', rounds, capMin: cap },
+      rx: [`${rounds} rounds or ${cap} min, whichever comes first · moderate pace${S.mmVest(w) ? ' · 20 lb in the ruck' : ''}`],
+      cues: ['Keep consistent times across all rounds', `Stop at ${cap} min even mid-round; log the rounds you finished`],
       items: mm.items, itemsLabel: 'Each round', inputs: [{ kind: 'rounds', count: rounds }] });
   }
-  if (w <= 4) blocks.push({ key: 'F', slotKey: 'd2.F.flush', name: 'Easy Flush', rule: { type: 'none' }, rx: ['10 min easy: 1 min row or bike / 1 min step-ups'], inputs: [] });
   return blocks;
 }
 

@@ -20,7 +20,7 @@ test('day 1 shape', () => {
 });
 test('day 2 shape and press lift by cycle', () => {
   const s = S(2);
-  assert.deepEqual(s.blocks.map(b => b.key), ['A', 'B', 'C', 'D', 'E', 'F']);
+  assert.deepEqual(s.blocks.map(b => b.key), ['A', 'B', 'C', 'D', 'E']);
   assert.equal(s.blocks[0].rule.type, 'ladder');
   assert.deepEqual(s.blocks[0].rule.reps, [8, 7, 6]);
   assert.equal(s.blocks[1].rule.type, 'introduce');
@@ -31,7 +31,19 @@ test('day 2 shape and press lift by cycle', () => {
   assert.equal(S(9).blocks[1].rule.type, 'peakRepeat');
   assert.equal(S(30).blocks.length, 5);
   assert.equal(S(2).blocks[4].rule.type, 'consistency');
-  assert.equal(S(2).blocks[4].rule.rounds, 5);
+  assert.equal(S(2).blocks[4].rule.rounds, 3);
+});
+test('day 2 mixed modal: no flush, 20-min cap, rounds ramp over the first four weeks of cycle 1', () => {
+  const mm = n => S(n).blocks.find(b => b.key === 'E');
+  assert.deepEqual([2, 9, 16, 23, 30].map(n => mm(n).rule.rounds), [3, 3, 4, 5, 5]);
+  assert.equal(mm(93).rule.rounds, 5, 'cycle 2 week 1 starts at the full dose');
+  assert.equal(mm(2).rule.capMin, 20);
+  assert.match(mm(2).rx[0], /^3 rounds or 20 min, whichever comes first/);
+  assert.match(mm(23).rx[0], /^5 rounds or 20 min/);
+  assert.match(mm(79).rx[0], /20 lb in the ruck/);
+  assert.deepEqual(mm(2).inputs, [{ kind: 'rounds', count: 3 }]);
+  for (const n of [2, 9, 16, 23]) assert.ok(!S(n).blocks.some(b => b.slotKey === 'd2.F.flush'), `day ${n} still has the flush`);
+  assert.ok(S(2).estMinutes <= 100, `day 2 estimate ${S(2).estMinutes} min`);
 });
 test('week 7 day 1 is a wave with 2k retest', () => {
   const s = S(43);
