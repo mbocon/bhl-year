@@ -2,3 +2,8 @@ data/
 .superpowers/
 node_modules/
 .DS_Store
+
+# personal documents, never committed
+private/
+reports/
+research_notes/
