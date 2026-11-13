@@ -6,9 +6,10 @@ import { visibleOptions } from '../program/rotations.js';
 import { parseTime, fmtTime, roundLoad, lbToKg, kgToLb } from '../format.js';
 import { go } from './router.js';
 import { weightTrend, trendText, macroPlan, todayOf } from '../nutrition.js';
+import { lastDayOf } from '../paths.js';
+import { FOUNDATION_DAYS } from '../program/bodyweight.js';
 
 const DAY_MS = 86400e3;
-const TOTAL = 365;
 
 function heaviest(sets) {
   let best = null;
@@ -38,7 +39,8 @@ export function renderToday(root, app) {
   const settings = store.settings();
   const ui = app.ui;
   const current = settings.currentDay;
-  const n = Math.min(TOTAL, Math.max(1, ui.peekDay ?? current));
+  const lastDay = lastDayOf(settings);              // 365 for BHL; the Bodyweight program has no last day
+  const n = Math.min(lastDay, Math.max(1, ui.peekDay ?? current));
   const s = session(n, settings);
   const history = historyFor(store);
   const log = store.getLog(n) || { blocks: {} };
@@ -48,29 +50,35 @@ export function renderToday(root, app) {
   const openKey = ui.openKey && keys.includes(ui.openKey) ? ui.openKey : (keys.find(k => !log.blocks[k]?.done) ?? null);
   const dayDone = !!log.completedAt;
 
-  const peek = delta => { ui.peekDay = Math.min(TOTAL, Math.max(1, n + delta)); ui.openKey = null; app.render(); };
+  const peek = delta => { ui.peekDay = Math.min(lastDay, Math.max(1, n + delta)); ui.openKey = null; app.render(); };
   const required = s.blocks.filter(b => !b.advanced);
   const optional = s.blocks.filter(b => b.advanced);
   const doneCount = () => required.filter(b => store.getLog(n)?.blocks?.[b.key]?.done).length;
   const plural = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
   const reqText = s.graduation ? 'Nothing left to log. Read on.'
     : s.rest ? `Rest day${optional.length ? ` · ${plural(optional.length, 'optional block')}` : ''}`
-      : `${plural(required.length, 'block')} to do, in order${optional.length ? ` · ${optional.length} optional` : ''}`;
+      : `${s.rotation ? `${plural(required.length, 'move')}, done as a rotation` : `${plural(required.length, 'block')} to do, in order`}${optional.length ? ` · ${optional.length} optional` : ''}`;
 
   // ----- header -----
-  const pct = Math.round((completedCount(store) / TOTAL) * 100);
+  const bw = s.path === 'bodyweight';
+  const completed = completedCount(store);
+  const pct = bw ? Math.min(100, Math.round((completed / FOUNDATION_DAYS) * 100)) : Math.round((completed / lastDay) * 100);
+  const bar = bw && s.phase !== 'F' ? null      // an open-ended program has nothing to be a percentage of
+    : h('div', { class: 'bar', title: bw ? `${pct}% of the first 12 weeks` : `${pct}% of the year` }, h('i', { style: `width:${pct}%` }));
+  const mins = s.estMinutes ? ` · ~${s.estMinutes} min` : '';
+  const metaLine = s.graduation ? 'Graduation' : bw ? `Week ${s.week} · ${s.phaseLabel}${mins}` : `Cycle ${s.cycle} · Week ${s.week} · ${s.phaseLabel}${mins}`;
   const header = h('header', { class: 'hdr' },
     h('div', { class: 'hdr-row' },
       h('button', { class: 'nav', 'aria-label': 'Previous day', onclick: () => peek(-1), disabled: n <= 1 }, '‹'),
       h('div', { class: 'day' }, `Day ${n}`),
-      h('button', { class: 'nav', 'aria-label': 'Next day', onclick: () => peek(1), disabled: n >= TOTAL }, '›')),
-    h('div', { class: 'meta' }, s.graduation ? 'Graduation' : `Cycle ${s.cycle} · Week ${s.week} · ${s.phaseLabel}${s.estMinutes ? ` · ~${s.estMinutes} min` : ''}`),
+      h('button', { class: 'nav', 'aria-label': 'Next day', onclick: () => peek(1), disabled: n >= lastDay }, '›')),
+    h('div', { class: 'meta' }, metaLine),
     h('div', { class: 'title' }, s.title),
     h('div', { class: 'req' }, reqText),
     n !== current
       ? h('div', { class: 'peek' }, `You are on Day ${current}. `, h('a', { href: '#today', onclick: e => { e.preventDefault(); store.setCurrentDay(n); ui.peekDay = null; ui.openKey = null; app.render(); } }, `Set Day ${n} as current`))
       : null,
-    h('div', { class: 'bar', title: `${pct}% of the year` }, h('i', { style: `width:${pct}%` })));
+    bar);
 
   // ----- banners -----
   const banners = [];
@@ -87,7 +95,7 @@ export function renderToday(root, app) {
     const wToday = store.weights()[todayISO];
     const tr = weightTrend(store.weights(), todayISO);
     const plan = macroPlan(settings, store.nutrition());
-    const tt = trendText(tr, plan && plan.basis === 'goal' ? plan.weight : null, current);
+    const tt = trendText(tr, plan && plan.basis === 'goal' ? plan.weight : null, current, lastDay);
     const shown = wToday == null ? '' : units === 'kg' ? Math.round(lbToKg(wToday) * 10) / 10 : wToday;
     weigh = h('div', { class: 'weigh' },
       h('span', { class: 'lab' }, 'Scale today'),
@@ -105,7 +113,7 @@ export function renderToday(root, app) {
     const resolved = resolveBlock(block, optionId);
     const blog = log.blocks[block.key] || {};
     const done = !!blog.done;
-    const meta = { slotKey: block.slotKey, optionId, ruleType: resolved.rule.type, lift: block.lift, format: resolved.rule.format };
+    const meta = { slotKey: block.slotKey, optionId, ruleType: resolved.rule.type, lift: block.lift, format: resolved.rule.format, target: resolved.rule.target };   // target: what was asked that day (slow-rep moves)
     const cur = () => store.getLog(n)?.blocks?.[block.key] || {};
     const write = patch => { store.logBlock(n, block.key, { ...meta, ...patch }); if (cur().done) recordTestIfAny(); };
     const isOpen = block.key === openKey;
@@ -196,7 +204,7 @@ export function renderToday(root, app) {
           return h('div', { class: 'set' }, h('span', { class: 'lab' }, inp.label || 'Time'),
             numField(blog.timeText ?? (Number.isFinite(blog.time) ? fmtTime(blog.time) : ''), 'm:ss', v => { const sec = parseTime(v); write({ timeText: v, time: sec ?? undefined }); }, 'numeric'));
         case 'cal': return h('div', { class: 'set' }, h('span', { class: 'lab' }, inp.label || 'Calories'), numField(blog.cal ?? '', 'cal', v => write({ cal: parseInt10(v) }), 'numeric'));
-        case 'reps': return h('div', { class: 'set' }, h('span', { class: 'lab' }, inp.label || 'Reps'), numField(blog.reps ?? '', 'reps', v => write({ reps: parseInt10(v) }), 'numeric'));
+        case 'reps': return h('div', { class: 'set' }, h('span', { class: 'lab' }, inp.label || 'Reps'), numField(blog.reps ?? '', inp.placeholder || 'reps', v => write({ reps: parseInt10(v) }), 'numeric'));
         case 'distance': return h('div', { class: 'set' }, h('span', { class: 'lab' }, `Distance (${inp.unit})`), numField(blog.distance ?? '', inp.unit, v => write({ distance: parseFloatU(v) })));
         case 'duration': return h('div', { class: 'set' }, h('span', { class: 'lab' }, 'Minutes'), numField(blog.duration ?? '', 'min', v => write({ duration: parseFloatU(v) }), 'numeric'));
         case 'hr': return h('div', { class: 'set' }, h('span', { class: 'lab' }, 'Avg HR'), numField(blog.hr ?? '', 'bpm (optional)', v => write({ hr: parseInt10(v) }), 'numeric'));
@@ -241,8 +249,10 @@ export function renderToday(root, app) {
 
   const dc = doneCount();
   const ctaNote = dayDone || s.graduation || s.rest ? null
-    : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} blocks marked done` : `${dc} of ${required.length} blocks marked done`);
+    : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} ${s.rotation ? 'moves' : 'blocks'} marked done` : `${dc} of ${required.length} ${s.rotation ? 'moves' : 'blocks'} marked done`);
+
+  const brief = s.brief && s.brief.length ? h('div', { class: 'banner brief' }, ...s.brief.map(line => h('div', null, line))) : null;
 
   clear(root);
-  root.append(header, ...banners, ...[weigh].filter(Boolean), h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
+  root.append(header, ...banners, ...[weigh, brief].filter(Boolean), h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
 }

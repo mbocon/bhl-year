@@ -72,6 +72,28 @@ function lastTop(ctx, slotKey) {
   return top ? top.w : null;
 }
 
+const SPEED_START = 3;
+const SPEED_MAX = 5;
+/**
+ * Seconds each way for a slow-rep move, from its earlier logs (oldest first). Every log that met its target makes
+ * the next session one second slower, up to SPEED_MAX. A capped move also needs its logged minutes inside the cap.
+ * @returns {{speed:number, last:object|null, lastHit:boolean, bumped:boolean}}
+ */
+export function repSpeed(entries, rule) {
+  let speed = SPEED_START; let last = null; let lastHit = false; let bumped = false;
+  for (const e of entries || []) {
+    const b = e.block || {};
+    if (!Number.isFinite(b.reps) || b.reps <= 0) continue;
+    const target = Number.isFinite(b.target) ? b.target : rule.target;
+    const inTime = !rule.capMinutes || !Number.isFinite(b.duration) || b.duration <= rule.capMinutes;
+    last = e;
+    lastHit = b.reps >= target && inTime;
+    bumped = lastHit && speed < SPEED_MAX;
+    if (bumped) speed++;
+  }
+  return { speed, last, lastHit, bumped };
+}
+
 const RULES = {
   ladder(block, ctx, rule) {
     const u = ctx.settings.units;
@@ -237,6 +259,22 @@ const RULES = {
     const e = estimate1RM(ev, { now: ctx.now });
     if (e === null) return missing('Work up by feel; log every attempt');
     return { text: `Estimated 1RM ≈ ${fmtLoad(e, ctx.settings.units)} · plan attempts around it`, sub: 'Open around 90%, then 97%, then go' };
+  },
+  slowReps(block, ctx, rule) {
+    const today = ctx.info?.n ?? Infinity;
+    const { speed, last, lastHit, bumped } = repSpeed(ctx.history.logsFor(block.slotKey).filter(e => e.day < today), rule);
+    const leg = rule.perLeg ? ' per leg' : '';
+    const pace = `${speed} s down, ${speed} s up`;
+    const ask = `${rule.target} reps${leg} · ${pace}`;
+    if (lastHit) return { text: ask, sub: bumped ? 'Target met last time, so each rep is a second slower' : `Target met at ${SPEED_MAX}-second reps: make the move harder` };
+    if (rule.mode === 'build') {
+      if (!last) return { text: `Count every rep · ${pace}`, sub: `${rule.target}${leg} is the goal, not today's number` };
+      if (rule.capMinutes && Number.isFinite(last.block.duration) && last.block.reps >= rule.target) {   // reps were there, the clock was not
+        return { text: ask, sub: `Reps met in ${last.block.duration} minutes last time. Now get them inside ${rule.capMinutes}.` };
+      }
+      return { text: `Beat ${last.block.reps}${leg} · ${pace}`, sub: `Goal: ${rule.target}${leg}${rule.capMinutes ? ` inside ${rule.capMinutes} minutes` : ''}` };
+    }
+    return { text: ask, sub: last ? `Last time: ${last.block.reps}${leg}` : 'First time: pick a version you can do for sets of 5 or more' };
   },
   none(block, ctx) {
     if (block.test) {

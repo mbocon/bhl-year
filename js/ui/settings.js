@@ -3,12 +3,15 @@ import { h, clear } from './dom.js';
 import { macroPlan, weightTrend, trendText, nextReviewISO, REVIEW, fmtISO, todayOf } from '../nutrition.js';
 import { backupFilename, shareOrDownload } from '../backup.js';
 import { maxHRFrom, hrRange } from '../format.js';
+import { PATHS, pathOf, lastDayOf, maxTypedDay } from '../paths.js';
 
 const EQUIPMENT = [['box', 'Plyo box'], ['rope', 'Jump rope'], ['kb', 'Kettlebells'], ['rings', 'Rings'], ['climbRope', 'Climbing rope'], ['hurdles', 'Hurdles'], ['vest', 'Weight vest'], ['slamBall', 'Slam ball'], ['hrm', 'Heart-rate monitor']];
 
 export function renderSettings(root, app) {
   const { store } = app;
   const s = store.settings();
+  const path = pathOf(s);
+  const onBhl = path.id === 'bhl';      // Advanced and Equipment only change BHL days
   clear(root);
   const num = (value, onCommit, placeholder = '') => h('input', { class: 'in', type: 'text', inputmode: 'decimal', value: value ?? '', placeholder, onchange: e => { const v = parseFloat(e.target.value); onCommit(Number.isFinite(v) ? v : null); } });
   const toggle = (on, onFlip) => h('button', { class: 'toggle' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: onFlip });
@@ -22,10 +25,12 @@ export function renderSettings(root, app) {
   // Program
   const dayIn = num(s.currentDay, () => {}, 'Day');
   root.append(h('div', { class: 'section' }, h('h2', null, 'Program'),
-    field('Current day', h('div', { style: 'display:flex;gap:6px' }, dayIn, h('button', { class: 'btn', onclick: () => { const n = parseInt(dayIn.value, 10); if (n >= 1 && n <= 365) { store.setCurrentDay(n); app.ui.peekDay = null; app.render(); } } }, 'Set'))),
+    field('Program', h('select', { onchange: e => { store.switchPath(e.target.value); app.ui.peekDay = null; app.ui.openKey = null; app.render(); } },
+      ...PATHS.map(p => h('option', { value: p.id, selected: p.id === path.id }, p.name))), 'Each program keeps its own day and log'),
+    field('Current day', h('div', { style: 'display:flex;gap:6px' }, dayIn, h('button', { class: 'btn', onclick: () => { const n = parseInt(dayIn.value, 10); if (n >= 1 && n <= maxTypedDay(s)) { store.setCurrentDay(n); app.ui.peekDay = null; app.render(); } } }, 'Set'))),
     field('Units', h('select', { onchange: e => { store.updateSettings({ units: e.target.value }); app.render(); } },
       h('option', { value: 'lb', selected: s.units === 'lb' }, 'lb'), h('option', { value: 'kg', selected: s.units === 'kg' }, 'kg'))),
-    field('Advanced', toggle(s.advanced, () => { store.updateSettings({ advanced: !s.advanced }); app.render(); }), 'Adds the Day 7 long zone 2 session and optional PM rides'),
+    onBhl && field('Advanced', toggle(s.advanced, () => { store.updateSettings({ advanced: !s.advanced }); app.render(); }), 'Adds the Day 7 long zone 2 session and optional PM rides'),
   ));
 
   // Body
@@ -38,7 +43,7 @@ export function renderSettings(root, app) {
   ));
 
   // Equipment
-  root.append(h('div', { class: 'section' }, h('h2', null, 'Equipment'),
+  if (onBhl) root.append(h('div', { class: 'section' }, h('h2', null, 'Equipment'),
     h('p', { class: 'muted' }, 'Unchecked gear hides the options that need it.'),
     ...EQUIPMENT.map(([k, label]) => field(label, toggle(!!s.equipment[k], () => { store.updateSettings({ equipment: { [k]: !s.equipment[k] } }); app.render(); })))));
 
@@ -63,7 +68,7 @@ export function renderSettings(root, app) {
           h('tr', null, h('td', null, 'Carbs (g)'), h('td', null, m ? m.carbs : '—')))),
       goalNote ? h('div', { class: 'muted', style: 'margin-top:8px' }, goalNote) : null,
       h('div', { class: 'muted', style: 'margin-top:8px' }, tr
-        ? `Scale: ${trendText(tr, m && m.basis === 'goal' ? m.weight : null, s.currentDay)} (${tr.n7} weigh-ins this week).`
+        ? `Scale: ${trendText(tr, m && m.basis === 'goal' ? m.weight : null, s.currentDay, lastDayOf(s))} (${tr.n7} weigh-ins this week).`
         : 'Log your scale weight on the Today screen most mornings; the trend appears after three weigh-ins.'),
       m && m.basis === 'goal' ? h('div', { class: 'muted', style: 'margin-top:8px' },
         `Automatic review every ${REVIEW.everyDays} days, the first ${REVIEW.skipDays} days after your first weigh-in, needing ${REVIEW.minPerWeek} weigh-ins in each of the last two weeks: losing under ${REVIEW.slow} lb/week cuts ${REVIEW.step} kcal from carbs, over ${REVIEW.fast} lb/week adds ${REVIEW.step} back, floor ${REVIEW.floorKcal} kcal.`
@@ -83,6 +88,7 @@ export function renderSettings(root, app) {
     const cur = Object.values(store.state.logs).reduce((a, r) => a + Object.keys(r).length, 0);
     if (!confirm(`Replace the ${cur} logged day(s) on this phone with this backup (${days} logged day(s))?`)) return;
     const r = store.importJSON(text);
+    if (r.ok) { app.ui.peekDay = null; app.ui.openKey = null; }   // the day being looked at belonged to the replaced data
     flash(r.ok ? 'Restored.' : r.error);
   };
   fileIn.addEventListener('change', () => { const f = fileIn.files && fileIn.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => doImport(String(rd.result)); rd.readAsText(f); });
@@ -101,9 +107,12 @@ export function renderSettings(root, app) {
     status));
 
   // Danger zone
+  const others = PATHS.filter(p => p.id !== path.id).map(p => p.name).join(' and ');
+  const startOverMsg = onBhl ? 'Start a new run at Day 1? Your history is kept and stays on the Scorecard.'
+    : `Restart ${path.name} at Day 1? Rep speeds and totals start again from nothing. ${others} is not affected.`;
   root.append(h('div', { class: 'section' }, h('h2', null, 'Start over'),
     h('div', { class: 'btn-row' },
-      h('button', { class: 'btn', onclick: () => { if (confirm('Start a new run at Day 1? Your history is kept and stays on the Scorecard.')) { store.startRun(); app.ui.peekDay = null; app.ui.openKey = null; app.render(); } } }, 'Start over at Day 1'),
+      h('button', { class: 'btn', onclick: () => { if (confirm(startOverMsg)) { store.startRun(); app.ui.peekDay = null; app.ui.openKey = null; app.render(); } } }, 'Start over at Day 1'),
       h('button', { class: 'btn danger', onclick: () => { if (confirm('Erase everything on this phone? This cannot be undone.') && confirm('Really erase all logs, tests, and settings?')) { store.eraseAll(); app.ui.peekDay = null; app.ui.openKey = null; app.render(); } } }, 'Erase everything')),
     h('p', { class: 'muted' }, store.persistent ? '' : "Storage is unavailable on this browser, so nothing here will persist.")));
 }

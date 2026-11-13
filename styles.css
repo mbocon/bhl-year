@@ -44,6 +44,7 @@ button { font: inherit; }
 /* banners */
 .banner { background: var(--chip-bg); color: var(--text); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 10px; }
 .banner.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.banner.brief div + div { margin-top: 6px; }
 
 /* cards */
 .blocks { display: flex; flex-direction: column; gap: 10px; }

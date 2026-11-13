@@ -47,12 +47,12 @@ export function projectGoalDay(trend, goalWeight, day) {
   if (!trend || !Number.isFinite(goalWeight) || !Number.isFinite(trend.rate) || trend.rate <= 0 || trend.avg7 <= goalWeight) return null;
   return day + Math.round((trend.avg7 - goalWeight) / (trend.rate / 7));
 }
-export function trendText(trend, goalWeight, day) {
+export function trendText(trend, goalWeight, day, lastDay = 365) {
   if (!trend) return null;
   let s = `7-day avg ${trend.avg7} lb`;
   if (trend.rate !== null) s += ` · ${trend.rate >= 0 ? 'losing' : 'gaining'} ${Math.abs(trend.rate).toFixed(1)} lb/wk`;
   const d = projectGoalDay(trend, goalWeight, day);
-  if (d) s += d <= 365 ? ` · ${goalWeight} lb around Day ${d}` : ` · ${goalWeight} lb is past Day 365 at this pace`;
+  if (d) s += d <= lastDay ? ` · ${goalWeight} lb around Day ${d}` : ` · ${goalWeight} lb is past Day ${lastDay} at this pace`;
   return s;
 }
 

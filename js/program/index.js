@@ -2,6 +2,7 @@
 import { dayInfo, DAY_NAMES } from '../calendar.js';
 import { DAY_BUILDERS, graduation, pmBlock } from './days.js';
 import { longDuration } from './schemes.js';
+import { bwSession } from './bodyweight.js';
 
 export const PHASE_LABELS = { A: 'Accumulation', B: 'Intensification', D: 'Deload + Tests', G: 'Graduation' };
 const PM_DAYS = new Set([1, 2, 3, 5]);
@@ -19,6 +20,7 @@ function estMinutes(info, blocks) {
 }
 
 export function session(n, settings = {}) {
+  if (settings.path === 'bodyweight') return bwSession(n);
   const info = dayInfo(n);
   const advanced = !!settings.advanced;
   let blocks;

@@ -1,6 +1,7 @@
 // Local-storage state: settings, runs, logs, tests, choices, backup. Pure JS, no DOM.
 import { dayInfo } from './calendar.js';
 import { weightTrend, planReview } from './nutrition.js';
+import { PATHS, lastDayOf } from './paths.js';
 
 export const STORAGE_KEY = 'bhl-year-v1';
 export const STATE_VERSION = 1;
@@ -10,6 +11,7 @@ const newRunId = () => 'run-' + Date.now().toString(36) + Math.random().toString
 
 export function defaultSettings(runId) {
   return {
+    path: 'bhl',
     currentDay: 1,
     currentRun: runId,
     units: 'lb',
@@ -30,15 +32,19 @@ function freshState() {
     version: STATE_VERSION,
     settings: defaultSettings(id),
     choices: {},
-    runs: [{ id, startedAt: Date.now(), endedAt: null }],
+    runs: [{ id, startedAt: Date.now(), endedAt: null, path: 'bhl' }],
     logs: { [id]: {} },
+    paths: {},                   // { currentDay, currentRun } of each program that is not the one in use
     tests: {},
     weights: {},                 // scale weight by calendar date, across runs
     nutrition: defaultNutrition(),
   };
 }
-// Older saved states and backups predate weights/nutrition: fill them in rather than reject them.
+// Older saved states and backups predate weights/nutrition/paths: fill them in rather than reject them.
 function migrate(st) {
+  if (!PATHS.some(p => p.id === st.settings.path)) st.settings.path = 'bhl';
+  st.paths ??= {};
+  for (const r of st.runs) r.path ??= 'bhl';
   st.weights ??= {};
   st.nutrition ??= defaultNutrition();
   st.nutrition.log ??= [];
@@ -151,12 +157,29 @@ export function createStore(storage = globalThis.localStorage) {
       const cur = state.runs.find(r => r.id === state.settings.currentRun);
       if (cur) cur.endedAt = now();
       const id = newRunId();
-      state.runs.push({ id, startedAt: now(), endedAt: null });
+      state.runs.push({ id, startedAt: now(), endedAt: null, path: state.settings.path });
       state.logs[id] = {};
       state.settings.currentRun = id;
       state.settings.currentDay = 1;
       save();
       return id;
+    },
+    /** Change program. The one being left keeps its day and run; the one being entered resumes its own, or starts at Day 1. */
+    switchPath(id) {
+      const from = state.settings.path;
+      if (id === from || !PATHS.some(p => p.id === id)) return false;
+      state.paths[from] = { currentDay: state.settings.currentDay, currentRun: state.settings.currentRun };
+      let next = state.paths[id];
+      if (!next || !state.runs.some(r => r.id === next.currentRun)) {
+        const runId = newRunId();
+        state.runs.push({ id: runId, startedAt: now(), endedAt: null, path: id });
+        state.logs[runId] = {};
+        next = { currentDay: 1, currentRun: runId };
+      }
+      delete state.paths[id];
+      state.settings = { ...state.settings, path: id, currentDay: next.currentDay, currentRun: next.currentRun };
+      save();
+      return true;
     },
 
     getLog(n) { return runLogs()[n]; },
@@ -171,7 +194,7 @@ export function createStore(storage = globalThis.localStorage) {
       const logs = runLogs();
       const day = (logs[n] ??= { completedAt: null, blocks: {} });
       if (!day.completedAt) day.completedAt = now();
-      if (n === state.settings.currentDay) state.settings.currentDay = Math.min(n + 1, 365);
+      if (n === state.settings.currentDay) state.settings.currentDay = Math.min(n + 1, lastDayOf(state.settings));
       save();
     },
     recordTest(testId, value, n) {

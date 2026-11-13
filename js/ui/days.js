@@ -1,7 +1,9 @@
-// Days view: the whole year grouped by cycle and week.
+// Days view: the BHL year grouped by cycle and week, or the Bodyweight program week by week.
 import { h, clear } from './dom.js';
 import { dayInfo, DAY_NAMES } from '../calendar.js';
 import { go } from './router.js';
+import { pathOf, maxTypedDay } from '../paths.js';
+import { bwDayInfo, bwTitle, FOUNDATION_DAYS } from '../program/bodyweight.js';
 
 function titleFor(info) {
   if (info.graduation) return 'Graduation';
@@ -20,23 +22,40 @@ export function renderDays(root, app) {
   root.append(h('header', { class: 'hdr' }, h('div', { class: 'day' }, 'Days'),
     h('div', { class: 'meta' }, `You are on Day ${current}. Tap any day to view it.`),
     h('div', { class: 'set' }, h('span', { class: 'lab' }, 'Jump to'), jump,
-      h('button', { class: 'btn', onclick: () => { const n = parseInt(jump.value, 10); if (n >= 1 && n <= 365) { app.ui.peekDay = n; app.ui.openKey = null; go('today'); } } }, 'Go'))));
+      h('button', { class: 'btn', onclick: () => { const n = parseInt(jump.value, 10); if (n >= 1 && n <= maxTypedDay(settings)) { app.ui.peekDay = n; app.ui.openKey = null; go('today'); } } }, 'Go'))));
+
+  const item = (n, title) => h('div', { class: 'item' + (n === current ? ' current' : ''), onclick: () => { app.ui.peekDay = n; app.ui.openKey = null; go('today'); } },
+    h('span', { class: 'n' }, `Day ${n}`), h('span', { class: 't' }, title), h('span', { class: 'ok' }, logs[n]?.completedAt ? '✓' : ''));
 
   let list = null;
-  for (let n = 1; n <= 365; n++) {
-    const info = dayInfo(n);
-    if (info.dow === 1 || info.graduation) {
-      if (info.graduation) root.append(h('div', { class: 'week-h' }, 'Day 365'));
-      else {
-        if (info.week === 1) root.append(h('div', { class: 'section' }, h('h2', null, `Cycle ${info.cycle}`)));
-        root.append(h('div', { class: 'week-h' }, `Week ${info.week} · ${info.week <= 6 ? 'Accumulation' : info.week <= 12 ? 'Intensification' : 'Deload + Tests'}`));
+  if (pathOf(settings).id === 'bodyweight') {
+    // No last day: show the first 12 weeks, and always four weeks past where you are.
+    const end = Math.max(FOUNDATION_DAYS, Math.ceil((current + 28) / 7) * 7);
+    for (let n = 1; n <= end; n++) {
+      const info = bwDayInfo(n);
+      if (info.dow === 1) {
+        if (n === 1) root.append(h('div', { class: 'section' }, h('h2', null, 'First 12 weeks')));
+        if (n === FOUNDATION_DAYS + 1) root.append(h('div', { class: 'section' }, h('h2', null, 'One part a day')));
+        root.append(h('div', { class: 'week-h' }, `Week ${info.week}`));
+        list = h('div', { class: 'list' });
+        root.append(list);
       }
-      list = h('div', { class: 'list' });
-      root.append(list);
+      list.append(item(n, bwTitle(n)));
     }
-    const done = !!logs[n]?.completedAt;
-    list.append(h('div', { class: 'item' + (n === current ? ' current' : ''), onclick: () => { app.ui.peekDay = n; app.ui.openKey = null; go('today'); } },
-      h('span', { class: 'n' }, `Day ${n}`), h('span', { class: 't' }, titleFor(info)), h('span', { class: 'ok' }, done ? '✓' : '')));
+  } else {
+    for (let n = 1; n <= 365; n++) {
+      const info = dayInfo(n);
+      if (info.dow === 1 || info.graduation) {
+        if (info.graduation) root.append(h('div', { class: 'week-h' }, 'Day 365'));
+        else {
+          if (info.week === 1) root.append(h('div', { class: 'section' }, h('h2', null, `Cycle ${info.cycle}`)));
+          root.append(h('div', { class: 'week-h' }, `Week ${info.week} · ${info.week <= 6 ? 'Accumulation' : info.week <= 12 ? 'Intensification' : 'Deload + Tests'}`));
+        }
+        list = h('div', { class: 'list' });
+        root.append(list);
+      }
+      list.append(item(n, titleFor(info)));
+    }
   }
   let current_el = root.querySelector('.item.current');
   if (current_el && typeof current_el.scrollIntoView === 'function') setTimeout(() => current_el.scrollIntoView({ block: 'center' }), 0);
