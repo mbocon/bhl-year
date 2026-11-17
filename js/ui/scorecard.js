@@ -5,7 +5,7 @@ import { dayInfo } from '../calendar.js';
 import { fmtTime } from '../format.js';
 import { estimate1RM, fmtLoad, repSpeed } from '../engine.js';
 import { pathOf } from '../paths.js';
-import { BW_MOVES } from '../program/bodyweight.js';
+import { bwMoves, bwDayInfo } from '../program/bodyweight.js';
 import { todayOf } from '../nutrition.js';
 
 const LIFTS = ['backsquat', 'frontsquat', 'deadlift', 'bench', 'ohp', 'clean'];
@@ -31,13 +31,13 @@ function better(b, a, c) { if (a === null) return c; if (c === null) return a; r
 
 /** Bodyweight program: each move's next rep speed with its last and best logged totals in this run. */
 function slowRepSection(store) {
-  const rows = BW_MOVES.map(m => {
+  const rows = bwMoves(bwDayInfo(store.settings().currentDay).week).map(m => {
     const entries = store.history.logsFor(m.slotKey, undefined, { includeToday: true }).filter(e => Number.isFinite(e.block.reps) && e.block.reps > 0);
     if (!entries.length) return null;
     const leg = m.rule.perLeg ? ' per leg' : '';
     const best = Math.max(...entries.map(e => e.block.reps));
     return h('tr', null,
-      h('td', null, m.name, h('div', { class: 'muted' }, m.phase === 'F' ? 'First 12 weeks' : 'One part a day')),
+      h('td', null, m.name),
       h('td', null, `${repSpeed(entries, m.rule).speed} s`),
       h('td', null, `${entries[entries.length - 1].block.reps}${leg}`),
       h('td', null, h('b', null, `${best}${leg}`)));

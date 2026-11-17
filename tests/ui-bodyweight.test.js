@@ -33,32 +33,65 @@ test('bodyweight days 1 to 400 render with every block opened', () => {
 test('today shows the week line, the brief and the day target', () => {
   const app = onBodyweight();
   app.ui.openKey = 'A'; app.render();
-  assert.match(view(), /Week 1 · Foundation · ~30 min/);
+  assert.match(view(), /Week 1 · Building reps · ~35 min/);
   assert.doesNotMatch(view(), /Cycle/);
   assert.equal(findAll('.brief').length, 1);
-  assert.match(text(findAll('.brief')[0]), /rotation/);
-  assert.match(view(), /6 moves, done as a rotation · 1 optional/);
-  assert.match(view(), /0 of 6 moves marked done/);
-  assert.doesNotMatch(view(), /in order/);
-  assert.match(text(findAll('.target')[0]), /25 reps per leg · 3 s down, 3 s up/);
-  assert.equal(findAll('.bar')[0].attrs.title, '0% of the first 12 weeks');
+  assert.match(text(findAll('.brief')[0]), /pair/i);
+  assert.match(view(), /6 moves, done in pairs · steps · 1 optional/);
+  assert.match(view(), /0 of 7 blocks marked done/);
+  assert.doesNotMatch(view(), /in order|rotation/);
+  assert.match(text(findAll('.target')[0]), /25 reps · 3 s down, 3 s up/);
+  assert.equal(findAll('.bar')[0].attrs.title, '0% of the first 8 weeks');
 });
-test('a walk day has a steps box and no brief', () => {
+test('a full-body day labels its three pairs and what comes after them', () => {
+  const app = onBodyweight();
+  app.render();
+  assert.deepEqual(findAll('.group-h').map(text), ['Pair 1', 'Pair 2', 'Pair 3', 'Also today']);
+  assert.deepEqual(findAll('.name').map(text), ['Pull-Ups', 'Push-Ups', 'Bulgarian Split Squats', 'Hanging Knee Raises', 'Overhead Press', 'Calf Raises', 'Steps', 'Cardio']);
+  assert.deepEqual(findAll('.fig').map(text), ['25 total', '25 per leg', '25 total', '25 total', '25 total', 'Goal: 10,000 steps', '']);   // A is open
+  app.store.setCurrentDay(2); app.render();
+  assert.equal(findAll('.group-h').length, 0);
+});
+test('a rest day has a steps box, an optional cardio block and no brief', () => {
   const app = onBodyweight();
   app.store.setCurrentDay(2); app.ui.openKey = 'A'; app.render();
   assert.equal(findAll('.brief').length, 0);
   typeInto('steps', '8200');
   assert.equal(app.store.getLog(2).blocks.A.reps, 8200);
-  assert.match(view(), /Week 1 · Foundation/);
+  assert.match(view(), /Week 1 · Building reps/);
+  assert.match(view(), /Rest day · 1 optional block/);
   assert.doesNotMatch(view(), /~0 min|undefined/);
 });
-test('logging a met target slows the same move next time', () => {
+test('a class day lists the class, steps and a pick-one optional cardio block', () => {
   const app = onBodyweight();
-  app.ui.openKey = 'A'; app.render();
-  typeInto('reps', '25'); clickCta();                      // day 1: split squats, 25 per leg
+  app.store.setCurrentDay(3); app.ui.openKey = 'C'; app.render();
+  assert.match(view(), /Jiu-Jitsu Class/);
+  assert.match(view(), /2 blocks to do · 1 optional/);
+  assert.doesNotMatch(view(), /in order/);
+  assert.deepEqual(findAll('.tag').map(text), ['Optional']);
+  const chips = () => findAll('button.chip');
+  assert.deepEqual(chips().map(text), ['✓ Easy', 'Steady', 'Intervals']);
+  assert.match(view(), /hold a conversation/);
+  chips().find(c => text(c) === 'Intervals').click();
+  assert.deepEqual(chips().map(text), ['Easy', 'Steady', '✓ Intervals']);
+  assert.match(view(), /8 rounds/);
+  typeInto('min', '16');
+  assert.equal(app.store.getLog(3).blocks.C.duration, 16);
+  app.store.setCurrentDay(2); app.ui.openKey = 'B'; app.render();          // the choice is remembered on the next cardio block
+  assert.deepEqual(chips().map(text), ['Easy', 'Steady', '✓ Intervals']);
+});
+test('speed is held while reps build, then a met target slows the same move next time', () => {
+  const app = onBodyweight();
+  const pullups = () => { app.ui.peekDay = null; app.ui.openKey = 'A'; app.render(); return text(findAll('.target')[0]); };
+  pullups(); typeInto('reps', '25'); clickCta();            // day 1: pull-ups, 25
   assert.equal(app.store.getLog(1).blocks.A.target, 25);
-  app.store.setCurrentDay(15); app.ui.peekDay = null; app.ui.openKey = 'A'; app.render();   // day 15: split squats again
-  assert.match(text(findAll('.target')[0]), /25 reps per leg · 4 s down, 4 s up/);
+  app.store.setCurrentDay(6);                               // day 6: pull-ups again
+  assert.match(pullups(), /25 reps · 3 s down, 3 s up/);
+  app.store.setCurrentDay(57);                              // week 9: the target is 35 from here on
+  assert.match(pullups(), /35 reps · 3 s down, 3 s up/);
+  typeInto('reps', '35'); clickCta();
+  app.store.setCurrentDay(62);                              // the next pull-up day
+  assert.match(pullups(), /35 reps · 4 s down, 4 s up/);
 });
 test('the day counter runs past 365 on bodyweight', () => {
   const app = onBodyweight();
@@ -66,8 +99,8 @@ test('the day counter runs past 365 on bodyweight', () => {
   assert.equal(app.store.settings().currentDay, 366);
   app.render();
   assert.match(view(), /Day 366/);
-  assert.match(view(), /Week 53 · One part a day/);
-  assert.match(view(), /2 blocks to do, in order · 1 optional/);
+  assert.match(view(), /Week 53 · Slow reps/);
+  assert.match(view(), /Rest day · 1 optional block/);
   assert.equal(findAll('.bar').length, 0);
 });
 test('the Settings select switches programs and hides bhl-only settings', () => {
@@ -103,12 +136,13 @@ test('switching back to bhl from a late bodyweight day renders every screen', ()
 test('days view lists bodyweight weeks beyond the current day', () => {
   const app = onBodyweight();
   app.route = 'days'; app.render();
-  assert.match(view(), /First 12 weeks/);
-  assert.doesNotMatch(view(), /Cycle|Graduation/);
-  assert.equal(findAll('.item').length, 84);
+  assert.match(view(), /Building reps/);
+  assert.doesNotMatch(view(), /Cycle|Graduation|Slow reps|First 12 weeks|One part a day/);
+  assert.equal(findAll('.item').length, 56);
   assert.match(text(findAll('.item')[0]), /Day 1Full Body/);
+  assert.match(text(findAll('.item')[2]), /Day 3Jiu-Jitsu/);
   app.store.setCurrentDay(400); app.render();
-  assert.match(view(), /One part a day/);
+  assert.match(view(), /Slow reps/);
   assert.equal(findAll('.item').length, 434);
 });
 test('the bhl days view still lists the year', () => {
@@ -123,11 +157,13 @@ test('scorecard lists logged slow-rep moves on bodyweight only', () => {
   assert.doesNotMatch(view(), /Slow-rep moves/);
   app.store.switchPath('bodyweight'); app.render();
   assert.match(view(), /Log a session and your moves appear here/);
-  app.store.logBlock(1, 'A', { slotKey: 'bw.f.splitsquat', reps: 25, target: 25 });
+  app.store.logBlock(1, 'C', { slotKey: 'bw.f.splitsquat', reps: 40, target: 25 });
   app.store.setCurrentDay(2); app.render();
-  assert.match(view(), /Bulgarian Split Squats/);
-  assert.match(view(), /4 s/);
-  assert.doesNotMatch(view(), /Log a session and your moves appear here/);
+  const row = () => findAll('tr').map(text).find(t => /Bulgarian Split Squats/.test(t));
+  assert.match(row(), /3 s40 per leg40 per leg/);             // weeks 1-8: speed is held however many reps were logged
+  assert.doesNotMatch(view(), /Log a session and your moves appear here|First 12 weeks|One part a day/);
+  app.store.setCurrentDay(57); app.render();
+  assert.match(row(), /4 s40 per leg40 per leg/);             // week 9 on: 40 met the 35 target
 });
 test('the goal projection has no day-365 wording on an open-ended path', () => {
   const tr = { avg7: 270, rate: 0.5 };

@@ -73,25 +73,23 @@ function lastTop(ctx, slotKey) {
 }
 
 const SPEED_START = 3;
-const SPEED_MAX = 5;
+const SPEED_SLOW = 4;
 /**
- * Seconds each way for a slow-rep move, from its earlier logs (oldest first). Every log that met its target makes
- * the next session one second slower, up to SPEED_MAX. A capped move also needs its logged minutes inside the cap.
- * @returns {{speed:number, last:object|null, lastHit:boolean, bumped:boolean}}
+ * Seconds each way for a slow-rep move, from its earlier logs (oldest first). While the target is still rising
+ * (rule.hold) the speed stays at SPEED_START. After that it follows the run of sessions that met the target: one met
+ * session slows the next to SPEED_SLOW, and meeting it there means the move gets harder and the speed starts again.
+ * @returns {{speed:number, last:object|null, lastHit:boolean, harder:boolean}}
  */
 export function repSpeed(entries, rule) {
-  let speed = SPEED_START; let last = null; let lastHit = false; let bumped = false;
+  let last = null; let run = 0;
   for (const e of entries || []) {
-    const b = e.block || {};
-    if (!Number.isFinite(b.reps) || b.reps <= 0) continue;
-    const target = Number.isFinite(b.target) ? b.target : rule.target;
-    const inTime = !rule.capMinutes || !Number.isFinite(b.duration) || b.duration <= rule.capMinutes;
+    const r = e.block?.reps;
+    if (!Number.isFinite(r) || r <= 0) continue;
     last = e;
-    lastHit = b.reps >= target && inTime;
-    bumped = lastHit && speed < SPEED_MAX;
-    if (bumped) speed++;
+    run = r >= rule.target ? run + 1 : 0;
   }
-  return { speed, last, lastHit, bumped };
+  const slowing = !rule.hold && run > 0;
+  return { speed: slowing && run % 2 ? SPEED_SLOW : SPEED_START, last, lastHit: run > 0, harder: slowing && run % 2 === 0 };
 }
 
 const RULES = {
@@ -262,19 +260,12 @@ const RULES = {
   },
   slowReps(block, ctx, rule) {
     const today = ctx.info?.n ?? Infinity;
-    const { speed, last, lastHit, bumped } = repSpeed(ctx.history.logsFor(block.slotKey).filter(e => e.day < today), rule);
+    const { speed, last, harder } = repSpeed(ctx.history.logsFor(block.slotKey).filter(e => e.day < today), rule);
     const leg = rule.perLeg ? ' per leg' : '';
-    const pace = `${speed} s down, ${speed} s up`;
-    const ask = `${rule.target} reps${leg} · ${pace}`;
-    if (lastHit) return { text: ask, sub: bumped ? 'Target met last time, so each rep is a second slower' : `Target met at ${SPEED_MAX}-second reps: make the move harder` };
-    if (rule.mode === 'build') {
-      if (!last) return { text: `Count every rep · ${pace}`, sub: `${rule.target}${leg} is the goal, not today's number` };
-      if (rule.capMinutes && Number.isFinite(last.block.duration) && last.block.reps >= rule.target) {   // reps were there, the clock was not
-        return { text: ask, sub: `Reps met in ${last.block.duration} minutes last time. Now get them inside ${rule.capMinutes}.` };
-      }
-      return { text: `Beat ${last.block.reps}${leg} · ${pace}`, sub: `Goal: ${rule.target}${leg}${rule.capMinutes ? ` inside ${rule.capMinutes} minutes` : ''}` };
-    }
-    return { text: ask, sub: last ? `Last time: ${last.block.reps}${leg}` : 'First time: pick a version you can do for sets of 5 or more' };
+    const text = `${rule.target} reps${leg} · ${speed} s down, ${speed} s up`;
+    if (harder) return { text, sub: `Target met at ${SPEED_SLOW}-second reps: make the move harder and go back to ${SPEED_START} seconds` };
+    if (speed > SPEED_START) return { text, sub: 'Target met last time, so each rep is a second slower' };
+    return { text, sub: last ? `Last time: ${last.block.reps}${leg}` : 'First time: pick a version you can do for sets of 5 or more' };
   },
   none(block, ctx) {
     if (block.test) {

@@ -1,5 +1,5 @@
 // Service worker: pre-cache the app shell so it opens offline. Bump VERSION on every deploy.
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CACHE = 'bhl-year-' + VERSION;
 const ASSETS = [
   './',

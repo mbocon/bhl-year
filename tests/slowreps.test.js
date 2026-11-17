@@ -3,66 +3,61 @@ import assert from 'node:assert/strict';
 import { targets, repSpeed } from '../js/engine.js';
 
 const E = (day, reps, extra = {}) => ({ day, block: { reps, ...extra } });
-const ctx = (entries, n = 99) => ({ history: { logsFor: () => entries }, settings: {}, info: { n } });
+const ctx = (entries, n = 999) => ({ history: { logsFor: () => entries }, settings: {}, info: { n } });
+const HOLD = { type: 'slowReps', target: 25, hold: true };   // weeks 1-8: reps are still rising
+const FULL = { type: 'slowReps', target: 35 };               // week 9 on
+const block = rule => ({ slotKey: 'x', rule });
+const FIRST = 'First time: pick a version you can do for sets of 5 or more';
 
-test('speed starts at 3, rises one second per met target, and stops at 5', () => {
-  const rule = { type: 'slowReps', mode: 'fixed', target: 25 };
-  assert.equal(repSpeed([], rule).speed, 3);
-  assert.equal(repSpeed([E(1, 24)], rule).speed, 3);
-  assert.equal(repSpeed([E(1, 25)], rule).speed, 4);
-  assert.equal(repSpeed([E(1, 25), E(3, 20), E(5, 26)], rule).speed, 5);
-  const capped = repSpeed([E(1, 25), E(3, 25), E(5, 25)], rule);
-  assert.equal(capped.speed, 5); assert.equal(capped.lastHit, true); assert.equal(capped.bumped, false);
+test('reps come first: speed holds at 3 seconds while the target is still rising', () => {
+  assert.equal(repSpeed([], HOLD).speed, 3);
+  const r = repSpeed([E(1, 25), E(4, 26)], HOLD);
+  assert.deepEqual([r.speed, r.lastHit, r.harder], [3, true, false]);
+  assert.deepEqual(targets(block(HOLD), ctx([E(1, 25)])), { text: '25 reps · 3 s down, 3 s up', sub: 'Last time: 25' });
 });
-test('repSpeed reports the last usable log and whether it met the target', () => {
-  const rule = { type: 'slowReps', mode: 'fixed', target: 25 };
-  assert.deepEqual(repSpeed([], rule), { speed: 3, last: null, lastHit: false, bumped: false });
-  const r = repSpeed([E(1, 25), E(3, 12)], rule);
-  assert.equal(r.last.block.reps, 12); assert.equal(r.lastHit, false); assert.equal(r.bumped, false); assert.equal(r.speed, 4);
+test('at the full target, a met session slows the next one to 4 seconds', () => {
+  assert.equal(repSpeed([], FULL).speed, 3);
+  assert.equal(repSpeed([E(57, 34)], FULL).speed, 3);
+  assert.equal(repSpeed([E(57, 35)], FULL).speed, 4);
+  assert.equal(repSpeed([E(57, 20), E(60, 36)], FULL).speed, 4);
 });
-test("the target saved with a log wins over today's target", () => {
-  const rule = { type: 'slowReps', mode: 'fixed', target: 35 };
-  assert.equal(repSpeed([E(1, 25, { target: 25 })], rule).speed, 4);
-  assert.equal(repSpeed([E(1, 25)], rule).speed, 3);
+test('sessions from the smaller early targets do not slow the reps', () => {
+  assert.equal(repSpeed([E(1, 25, { target: 25 }), E(30, 30, { target: 30 })], FULL).speed, 3);
+  assert.equal(repSpeed([E(1, 25, { target: 25 })], FULL).lastHit, false);
 });
-test('a capped move needs the minutes too, unless none were logged', () => {
-  const rule = { type: 'slowReps', mode: 'build', target: 100, capMinutes: 45 };
-  assert.equal(repSpeed([E(85, 100, { duration: 50 })], rule).speed, 3);
-  assert.equal(repSpeed([E(85, 100, { duration: 45 })], rule).speed, 4);
-  assert.equal(repSpeed([E(85, 100)], rule).speed, 4);
+test('met at 4 seconds: make the move harder and go back to 3, round and round', () => {
+  const twice = repSpeed([E(57, 35), E(62, 35)], FULL);
+  assert.deepEqual([twice.speed, twice.lastHit, twice.harder], [3, true, true]);
+  const missed = repSpeed([E(57, 35), E(62, 35), E(64, 28)], FULL);       // the harder version
+  assert.deepEqual([missed.speed, missed.lastHit, missed.harder], [3, false, false]);
+  assert.equal(repSpeed([E(57, 35), E(62, 35), E(64, 28), E(71, 35)], FULL).speed, 4);
+  assert.equal(repSpeed([E(57, 35), E(62, 35), E(64, 35)], FULL).speed, 4);   // kept the same version and met it again
+  assert.equal(repSpeed([E(57, 35), E(62, 35), E(64, 35), E(71, 35)], FULL).harder, true);
+});
+test('repSpeed reports the last usable log', () => {
+  assert.deepEqual(repSpeed([], FULL), { speed: 3, last: null, lastHit: false, harder: false });
+  const r = repSpeed([E(57, 35), E(62, 12)], FULL);
+  assert.equal(r.last.block.reps, 12); assert.equal(r.lastHit, false); assert.equal(r.speed, 3);
 });
 test('blank or zero reps are ignored, even when the block was ticked done', () => {
-  const rule = { type: 'slowReps', mode: 'build', target: 100, capMinutes: 45 };
-  const t = targets({ slotKey: 'x', rule }, ctx([{ day: 85, block: { done: true } }, E(92, 0)]));
-  assert.equal(t.text, 'Count every rep · 3 s down, 3 s up');
-  assert.doesNotMatch(t.text + t.sub, /undefined|NaN/);
+  const t = targets(block(FULL), ctx([{ day: 57, block: { done: true } }, E(62, 0)]));
+  assert.deepEqual(t, { text: '35 reps · 3 s down, 3 s up', sub: FIRST });
+  assert.equal(repSpeed([E(57, 35), { day: 60, block: { done: true } }], FULL).speed, 4);   // a blank log does not break the run
 });
-test('fixed mode wording', () => {
-  const block = { slotKey: 'x', rule: { type: 'slowReps', mode: 'fixed', target: 25, perLeg: true } };
-  assert.deepEqual(targets(block, ctx([])), { text: '25 reps per leg · 3 s down, 3 s up', sub: 'First time: pick a version you can do for sets of 5 or more' });
-  assert.deepEqual(targets(block, ctx([E(1, 18)])), { text: '25 reps per leg · 3 s down, 3 s up', sub: 'Last time: 18 per leg' });
-  assert.deepEqual(targets(block, ctx([E(1, 25)])), { text: '25 reps per leg · 4 s down, 4 s up', sub: 'Target met last time, so each rep is a second slower' });
-  assert.equal(targets(block, ctx([E(1, 25), E(3, 25), E(5, 25)])).sub, 'Target met at 5-second reps: make the move harder');
-});
-test('build mode wording', () => {
-  const block = { slotKey: 'x', rule: { type: 'slowReps', mode: 'build', target: 100, capMinutes: 45 } };
-  assert.deepEqual(targets(block, ctx([])), { text: 'Count every rep · 3 s down, 3 s up', sub: "100 is the goal, not today's number" });
-  assert.deepEqual(targets(block, ctx([E(85, 42, { duration: 30 })])), { text: 'Beat 42 · 3 s down, 3 s up', sub: 'Goal: 100 inside 45 minutes' });
-  assert.equal(targets(block, ctx([E(85, 100, { duration: 44 })])).text, '100 reps · 4 s down, 4 s up');
-  const legs = { slotKey: 'y', rule: { type: 'slowReps', mode: 'build', target: 35, perLeg: true } };
-  assert.deepEqual(targets(legs, ctx([E(87, 20)])), { text: 'Beat 20 per leg · 3 s down, 3 s up', sub: 'Goal: 35 per leg' });
+test('wording at each step', () => {
+  const legs = block({ type: 'slowReps', target: 35, perLeg: true });
+  assert.deepEqual(targets(legs, ctx([])), { text: '35 reps per leg · 3 s down, 3 s up', sub: FIRST });
+  assert.deepEqual(targets(legs, ctx([E(57, 18)])), { text: '35 reps per leg · 3 s down, 3 s up', sub: 'Last time: 18 per leg' });
+  assert.deepEqual(targets(legs, ctx([E(57, 35)])), { text: '35 reps per leg · 4 s down, 4 s up', sub: 'Target met last time, so each rep is a second slower' });
+  assert.deepEqual(targets(legs, ctx([E(57, 35), E(64, 35)])), { text: '35 reps per leg · 3 s down, 3 s up', sub: 'Target met at 4-second reps: make the move harder and go back to 3 seconds' });
+  const held = block({ type: 'slowReps', target: 25, perLeg: true, hold: true });
+  assert.deepEqual(targets(held, ctx([])), { text: '25 reps per leg · 3 s down, 3 s up', sub: FIRST });
+  for (const t of [targets(legs, ctx([E(57, 35)])), targets(held, ctx([E(1, 30)]))]) assert.doesNotMatch(t.text + t.sub, /undefined|NaN/);
 });
 test('looking back at an earlier day shows the speed that applied then', () => {
-  const block = { slotKey: 'x', rule: { type: 'slowReps', mode: 'fixed', target: 25 } };
-  const entries = [E(1, 25), E(3, 25)];
-  assert.match(targets(block, ctx(entries, 3)).text, /4 s down/);
-  assert.match(targets(block, ctx(entries, 5)).text, /5 s down/);
-  assert.match(targets(block, ctx(entries, 1)).text, /3 s down/);
-});
-
-test('reps met but over the time: the ask is the time, not more reps', () => {
-  const block = { slotKey: 'x', rule: { type: 'slowReps', mode: 'build', target: 100, capMinutes: 45 } };
-  assert.deepEqual(targets(block, ctx([E(85, 100, { duration: 50 })])), { text: '100 reps · 3 s down, 3 s up', sub: 'Reps met in 50 minutes last time. Now get them inside 45.' });
-  const calves = { slotKey: 'c', rule: { type: 'slowReps', mode: 'build', target: 100, capMinutes: 15 } };
-  assert.deepEqual(targets(calves, ctx([E(85, 103, { duration: 20 })])), { text: '100 reps · 3 s down, 3 s up', sub: 'Reps met in 20 minutes last time. Now get them inside 15.' });
+  const entries = [E(57, 35), E(62, 35)];
+  assert.match(targets(block(FULL), ctx(entries, 57)).text, /3 s down/);
+  assert.match(targets(block(FULL), ctx(entries, 62)).text, /4 s down/);
+  assert.match(targets(block(FULL), ctx(entries, 64)).text, /3 s down/);
+  assert.match(targets(block(FULL), ctx(entries, 64)).sub, /make the move harder/);
 });

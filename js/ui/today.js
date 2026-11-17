@@ -7,7 +7,7 @@ import { parseTime, fmtTime, roundLoad, lbToKg, kgToLb } from '../format.js';
 import { go } from './router.js';
 import { weightTrend, trendText, macroPlan, todayOf } from '../nutrition.js';
 import { lastDayOf } from '../paths.js';
-import { FOUNDATION_DAYS } from '../program/bodyweight.js';
+import { BUILD_DAYS } from '../program/bodyweight.js';
 
 const DAY_MS = 86400e3;
 
@@ -55,16 +55,19 @@ export function renderToday(root, app) {
   const optional = s.blocks.filter(b => b.advanced);
   const doneCount = () => required.filter(b => store.getLog(n)?.blocks?.[b.key]?.done).length;
   const plural = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
+  const bw = s.path === 'bodyweight';
+  // A paired day leads with its moves, then names whatever else is required (steps).
+  const todo = s.rotation ? [`${plural(s.rotation, 'move')}, done in pairs`, ...required.slice(s.rotation).map(b => b.name.toLowerCase())].join(' · ')
+    : `${plural(required.length, 'block')} to do${bw ? '' : ', in order'}`;
   const reqText = s.graduation ? 'Nothing left to log. Read on.'
     : s.rest ? `Rest day${optional.length ? ` · ${plural(optional.length, 'optional block')}` : ''}`
-      : `${s.rotation ? `${plural(required.length, 'move')}, done as a rotation` : `${plural(required.length, 'block')} to do, in order`}${optional.length ? ` · ${optional.length} optional` : ''}`;
+      : `${todo}${optional.length ? ` · ${optional.length} optional` : ''}`;
 
   // ----- header -----
-  const bw = s.path === 'bodyweight';
   const completed = completedCount(store);
-  const pct = bw ? Math.min(100, Math.round((completed / FOUNDATION_DAYS) * 100)) : Math.round((completed / lastDay) * 100);
-  const bar = bw && s.phase !== 'F' ? null      // an open-ended program has nothing to be a percentage of
-    : h('div', { class: 'bar', title: bw ? `${pct}% of the first 12 weeks` : `${pct}% of the year` }, h('i', { style: `width:${pct}%` }));
+  const pct = bw ? Math.min(100, Math.round((completed / BUILD_DAYS) * 100)) : Math.round((completed / lastDay) * 100);
+  const bar = bw && s.phase !== 'B' ? null      // an open-ended program has nothing to be a percentage of
+    : h('div', { class: 'bar', title: bw ? `${pct}% of the first 8 weeks` : `${pct}% of the year` }, h('i', { style: `width:${pct}%` }));
   const mins = s.estMinutes ? ` · ~${s.estMinutes} min` : '';
   const metaLine = s.graduation ? 'Graduation' : bw ? `Week ${s.week} · ${s.phaseLabel}${mins}` : `Cycle ${s.cycle} · Week ${s.week} · ${s.phaseLabel}${mins}`;
   const header = h('header', { class: 'hdr' },
@@ -119,7 +122,7 @@ export function renderToday(root, app) {
     const isOpen = block.key === openKey;
     const vis = block.options ? visibleOptions(block.options, equipment) : null;
     const chosen = vis ? (vis.find(o => o.id === optionId) || vis[0]) : null;
-    const keyFigure = resolved.rx?.[0] || '';
+    const keyFigure = block.fig ?? resolved.rx?.[0] ?? '';
     const longName = block.name.length > 26;         // long titles wrap onto two lines instead of sharing the row with a clipped figure
 
     const letter = h('div', { class: 'letter' + (block.advanced ? ' adv' : '') }, block.key);
@@ -249,10 +252,13 @@ export function renderToday(root, app) {
 
   const dc = doneCount();
   const ctaNote = dayDone || s.graduation || s.rest ? null
-    : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} ${s.rotation ? 'moves' : 'blocks'} marked done` : `${dc} of ${required.length} ${s.rotation ? 'moves' : 'blocks'} marked done`);
+    : h('div', { class: 'cta-note' }, dc === required.length ? `All ${required.length} blocks marked done` : `${dc} of ${required.length} blocks marked done`);
 
   const brief = s.brief && s.brief.length ? h('div', { class: 'banner brief' }, ...s.brief.map(line => h('div', null, line))) : null;
 
+  // Blocks that share a `group` (a pair of moves) sit under one small heading.
+  const cards = s.blocks.flatMap((b, i) => (b.group && b.group !== s.blocks[i - 1]?.group ? [h('div', { class: 'group-h' }, b.group), renderBlock(b)] : [renderBlock(b)]));
+
   clear(root);
-  root.append(header, ...banners, ...[weigh, brief].filter(Boolean), h('div', { class: 'blocks' }, ...s.blocks.map(renderBlock)), ...[ctaNote, cta].filter(Boolean));
+  root.append(header, ...banners, ...[weigh, brief].filter(Boolean), h('div', { class: 'blocks' }, ...cards), ...[ctaNote, cta].filter(Boolean));
 }

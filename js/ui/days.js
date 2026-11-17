@@ -3,7 +3,7 @@ import { h, clear } from './dom.js';
 import { dayInfo, DAY_NAMES } from '../calendar.js';
 import { go } from './router.js';
 import { pathOf, maxTypedDay } from '../paths.js';
-import { bwDayInfo, bwTitle, FOUNDATION_DAYS } from '../program/bodyweight.js';
+import { bwDayInfo, bwTitle, BUILD_DAYS } from '../program/bodyweight.js';
 
 function titleFor(info) {
   if (info.graduation) return 'Graduation';
@@ -29,13 +29,13 @@ export function renderDays(root, app) {
 
   let list = null;
   if (pathOf(settings).id === 'bodyweight') {
-    // No last day: show the first 12 weeks, and always four weeks past where you are.
-    const end = Math.max(FOUNDATION_DAYS, Math.ceil((current + 28) / 7) * 7);
+    // No last day: show the eight weeks of rising targets, and always four weeks past where you are.
+    const end = Math.max(BUILD_DAYS, Math.ceil((current + 28) / 7) * 7);
     for (let n = 1; n <= end; n++) {
       const info = bwDayInfo(n);
       if (info.dow === 1) {
-        if (n === 1) root.append(h('div', { class: 'section' }, h('h2', null, 'First 12 weeks')));
-        if (n === FOUNDATION_DAYS + 1) root.append(h('div', { class: 'section' }, h('h2', null, 'One part a day')));
+        if (n === 1) root.append(h('div', { class: 'section' }, h('h2', null, 'Building reps')));
+        if (n === BUILD_DAYS + 1) root.append(h('div', { class: 'section' }, h('h2', null, 'Slow reps')));
         root.append(h('div', { class: 'week-h' }, `Week ${info.week}`));
         list = h('div', { class: 'list' });
         root.append(list);
